@@ -1,0 +1,148 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * LMP Design System — premium editorial SaaS palette.
+ * Light = clean & professional · Dark = elegant, high contrast.
+ */
+:root {
+  --background: 240 30% 99%;
+  --foreground: 230 25% 12%;
+
+  --card: 0 0% 100%;
+  --card-foreground: 230 25% 12%;
+
+  --muted: 232 24% 96%;
+  --muted-foreground: 230 12% 45%;
+
+  --border: 232 22% 90%;
+  --input: 232 22% 90%;
+  --ring: 248 70% 60%;
+
+  /* Brand: deep editorial indigo */
+  --primary: 248 70% 58%;
+  --primary-foreground: 0 0% 100%;
+
+  /* Accent: warm amber (manuscript / paper) */
+  --accent: 32 95% 55%;
+  --accent-foreground: 30 40% 12%;
+
+  --success: 152 60% 42%;
+  --success-foreground: 0 0% 100%;
+  --warning: 38 92% 50%;
+  --warning-foreground: 30 40% 12%;
+  --danger: 0 72% 55%;
+  --danger-foreground: 0 0% 100%;
+  --info: 210 90% 56%;
+  --info-foreground: 0 0% 100%;
+
+  --sidebar: 234 30% 14%;
+  --sidebar-foreground: 232 20% 80%;
+  --sidebar-accent: 248 70% 62%;
+
+  --radius: 0.85rem;
+}
+
+.dark {
+  --background: 232 24% 8%;
+  --foreground: 232 18% 92%;
+
+  --card: 232 22% 11%;
+  --card-foreground: 232 18% 92%;
+
+  --muted: 232 18% 16%;
+  --muted-foreground: 232 12% 62%;
+
+  --border: 232 16% 20%;
+  --input: 232 16% 22%;
+  --ring: 248 70% 66%;
+
+  --primary: 248 80% 68%;
+  --primary-foreground: 232 30% 10%;
+
+  --accent: 32 90% 58%;
+  --accent-foreground: 30 40% 10%;
+
+  --success: 152 55% 50%;
+  --success-foreground: 232 30% 10%;
+  --warning: 38 90% 58%;
+  --warning-foreground: 30 40% 10%;
+  --danger: 0 70% 62%;
+  --danger-foreground: 232 30% 10%;
+  --info: 210 85% 62%;
+  --info-foreground: 232 30% 10%;
+
+  --sidebar: 234 30% 10%;
+  --sidebar-foreground: 232 18% 78%;
+  --sidebar-accent: 248 80% 70%;
+}
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-success: hsl(var(--success));
+  --color-success-foreground: hsl(var(--success-foreground));
+  --color-warning: hsl(var(--warning));
+  --color-warning-foreground: hsl(var(--warning-foreground));
+  --color-danger: hsl(var(--danger));
+  --color-danger-foreground: hsl(var(--danger-foreground));
+  --color-info: hsl(var(--info));
+  --color-info-foreground: hsl(var(--info-foreground));
+  --color-sidebar: hsl(var(--sidebar));
+  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
+  --color-sidebar-accent: hsl(var(--sidebar-accent));
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 0.25rem);
+  --radius-sm: calc(var(--radius) - 0.4rem);
+
+  --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Subtle scrollbars */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(var(--muted-foreground) / 0.5);
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
