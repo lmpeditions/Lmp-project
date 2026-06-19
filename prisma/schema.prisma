@@ -154,6 +154,8 @@ model User {
   notifications    Notification[]
   activityLogs     ActivityLog[]
   inviteTokens     InviteToken[]
+  editorialRemarks EditorialRemark[]
+  stageMessages    StageMessage[]
 
   @@index([role])
   @@index([status])
@@ -178,6 +180,8 @@ model Dossier {
   trackingNumber       String        @unique // e.g. #LMP20260001
   bookTitle            String
   description          String?
+  isbn                 String?
+  legalDeposit         String? // numéro de dépôt légal
   formula              String
   status               DossierStatus @default(IN_PROGRESS)
   globalProgress       Int           @default(0)
@@ -201,6 +205,8 @@ model Dossier {
   notifications    Notification[]
   activityLogs     ActivityLog[]
   termination      TerminationRequest?
+  remarks          EditorialRemark[]
+  stageMessages    StageMessage[]
 
   @@index([authorId])
   @@index([managerId])
@@ -222,6 +228,38 @@ model Stage {
 
   @@unique([dossierId, type])
   @@index([dossierId])
+}
+
+// Editorial note on a book: a titled remark with an optional file, shown to
+// the author. Used for the merged Relecture/Correction stage.
+model EditorialRemark {
+  id          String   @id @default(cuid())
+  dossierId   String
+  dossier     Dossier  @relation(fields: [dossierId], references: [id], onDelete: Cascade)
+  stage       String   @default("REVIEW") // REVIEW | LAYOUT | …
+  title       String
+  description String
+  attachments Json? // [{ name, url }]
+  createdById String?
+  createdBy   User?    @relation(fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@index([dossierId, stage])
+}
+
+// Author ↔ editor conversation thread, scoped to a stage (timestamped, stacks).
+model StageMessage {
+  id          String   @id @default(cuid())
+  dossierId   String
+  dossier     Dossier  @relation(fields: [dossierId], references: [id], onDelete: Cascade)
+  stage       String   @default("REVIEW")
+  senderId    String
+  sender      User     @relation(fields: [senderId], references: [id])
+  body        String
+  attachments Json? // [{ name, url }]
+  createdAt   DateTime @default(now())
+
+  @@index([dossierId, stage])
 }
 
 model Payment {
