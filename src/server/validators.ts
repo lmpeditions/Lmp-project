@@ -92,6 +92,38 @@ export const createUserSchema = z.object({
   role: z.enum(["SUPER_ADMIN", "ADMIN", "MANAGER", "AUTHOR"]),
 });
 
+/** Full author CRM record + their first book, created by an admin. */
+export const createAuthorSchema = z.object({
+  name: z.string().min(1).max(200),
+  email: z.string().email().max(200),
+  nationality: z.string().max(100).optional(),
+  phone: z.string().max(40).optional(),
+  cin: z.string().max(40).optional(),
+  address: z.string().max(300).optional(),
+  profession: z.string().max(120).optional(),
+  bookTitle: z.string().min(1).max(300),
+  formula: z.string().min(1).max(100),
+  contractTotal: z.coerce.number().int().nonnegative().default(0),
+});
+
+export const requestResetSchema = z.object({
+  email: z.string().email().max(200),
+});
+
+/** Set a password from an activation or reset token. */
+export const setPasswordSchema = z
+  .object({
+    token: z.string().min(10),
+    password: z.string().min(8).max(200),
+    confirm: z.string().min(8).max(200),
+  })
+  .refine((d) => d.password === d.confirm, {
+    message: "PASSWORDS_DO_NOT_MATCH",
+    path: ["confirm"],
+  });
+
+export type CreateAuthorInput = z.infer<typeof createAuthorSchema>;
+
 export type LoginInput = z.infer<typeof loginSchema>;
 export type CreateDossierInput = z.infer<typeof createDossierSchema>;
 export type UpdateStageInput = z.infer<typeof updateStageSchema>;

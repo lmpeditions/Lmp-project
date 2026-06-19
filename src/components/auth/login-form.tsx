@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { ArrowRight, AlertCircle } from "lucide-react";
+import { Link } from "@/i18n/routing";
 import { loginAction, type LoginState } from "@/server/auth-actions";
 
 const inputClass =
@@ -41,9 +42,9 @@ export function LoginForm() {
           <label htmlFor="password" className="text-sm font-medium">
             {t("password")}
           </label>
-          <span className="text-xs text-primary hover:underline">
+          <Link href="/forgot-password" className="text-xs text-primary hover:underline">
             {t("forgotPassword")}
-          </span>
+          </Link>
         </div>
         <input
           id="password"

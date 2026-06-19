@@ -1,39 +1,39 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 import type { NotificationType } from "@prisma/client";
 import { prisma } from "./prisma";
 
 /**
  * Notifications = in-app record (always) + best-effort email.
  *
- * Email transport is configured from SMTP_* env vars. When SMTP is not
- * configured (e.g. local dev) we log to the console instead of failing.
- * WhatsApp is a planned phase-2 channel (see spec).
+ * Email is sent via Resend (https://resend.com) when RESEND_API_KEY is set.
+ * In local dev (no key) we log to the console instead of failing, so flows
+ * stay testable. WhatsApp is a planned phase-2 channel (see spec).
  */
 
-let transporter: nodemailer.Transporter | null = null;
+let resend: Resend | null = null;
 
-function getTransport(): nodemailer.Transporter | null {
-  if (!process.env.SMTP_HOST) return null;
-  if (!transporter) {
-    transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT ?? 587),
-      secure: Number(process.env.SMTP_PORT ?? 587) === 465,
-      auth: process.env.SMTP_USER
-        ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASSWORD }
-        : undefined,
-    });
-  }
-  return transporter;
+function getResend(): Resend | null {
+  if (!process.env.RESEND_API_KEY) return null;
+  if (!resend) resend = new Resend(process.env.RESEND_API_KEY);
+  return resend;
 }
 
 export async function sendEmail(to: string, subject: string, html: string): Promise<void> {
-  const t = getTransport();
-  if (!t) {
-    console.info(`[email:dev] To: ${to} — ${subject}`);
+  const client = getResend();
+  if (!client) {
+    console.info(`[email:dev] To: ${to} — ${subject} (RESEND_API_KEY non défini, e-mail non envoyé)`);
     return;
   }
-  await t.sendMail({ from: process.env.EMAIL_FROM ?? "LMP <no-reply@lmp.ma>", to, subject, html });
+  const { error } = await client.emails.send({
+    from: process.env.EMAIL_FROM ?? "LMP <onboarding@resend.dev>",
+    to,
+    subject,
+    html,
+  });
+  if (error) {
+    console.error(`[email] échec d'envoi à ${to}:`, error);
+    throw new Error(`EMAIL_SEND_FAILED: ${error.message}`);
+  }
 }
 
 /** Create an in-app notification and (optionally) email the user. */

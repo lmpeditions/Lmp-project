@@ -131,6 +131,9 @@ model User {
   name         String
   phone        String?
   address      String?
+  nationality  String?
+  cin          String?
+  profession   String?
   role         Role       @default(AUTHOR)
   status       UserStatus @default(INVITED)
   locale       Locale     @default(FR)
