@@ -13,9 +13,11 @@ interface TopbarProps {
   notifications?: number;
   /** Optional href for the notification bell (e.g. "/author/notifications"). */
   notificationsHref?: string;
+  /** Optional content shown at the start of the bar (e.g. the book switcher). */
+  leading?: React.ReactNode;
 }
 
-export function Topbar({ userName, userRole, notifications = 0, notificationsHref }: TopbarProps) {
+export function Topbar({ userName, userRole, notifications = 0, notificationsHref, leading }: TopbarProps) {
   const tCommon = useTranslations("common");
   const initials = userName
     .split(" ")
@@ -26,14 +28,18 @@ export function Topbar({ userName, userRole, notifications = 0, notificationsHre
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border bg-background/80 px-4 backdrop-blur-md sm:px-6">
-      <div className="relative hidden flex-1 sm:block sm:max-w-xs">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <input
-          type="search"
-          placeholder={tCommon("search")}
-          className="h-9 w-full rounded-md border border-border bg-card pl-9 pr-3 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/30"
-        />
-      </div>
+      {leading ? (
+        <div className="min-w-0 flex-1 sm:max-w-xs">{leading}</div>
+      ) : (
+        <div className="relative hidden flex-1 sm:block sm:max-w-xs">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            type="search"
+            placeholder={tCommon("search")}
+            className="h-9 w-full rounded-md border border-border bg-card pl-9 pr-3 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/30"
+          />
+        </div>
+      )}
 
       <div className="ml-auto flex items-center gap-2">
         <LanguageSwitcher />

@@ -56,13 +56,19 @@ export async function notify(params: {
   });
 
   if (params.email) {
-    const user = await prisma.user.findUnique({ where: { id: params.userId } });
-    if (user?.email) {
-      await sendEmail(
-        user.email,
-        params.title,
-        `<p>${params.body}</p><p style="color:#888">— LMP, Portail de Suivi Éditorial</p>`
-      );
+    // Email is best-effort: a delivery failure must never break the action
+    // that triggered the notification (the in-app record above is what counts).
+    try {
+      const user = await prisma.user.findUnique({ where: { id: params.userId } });
+      if (user?.email) {
+        await sendEmail(
+          user.email,
+          params.title,
+          `<p>${params.body}</p><p style="color:#888">— LMP, Portail de Suivi Éditorial</p>`
+        );
+      }
+    } catch (e) {
+      console.error("[notify] e-mail non envoyé:", e);
     }
   }
 }

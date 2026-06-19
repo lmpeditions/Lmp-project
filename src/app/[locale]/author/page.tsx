@@ -21,9 +21,10 @@ import { Progress } from "@/components/ui/progress";
 import { PageHeader } from "@/components/shared/page-header";
 import { ProgressGauge } from "@/components/author/progress-gauge";
 import { StageTimeline } from "@/components/author/stage-timeline";
+import { Clock } from "lucide-react";
 import { redirect } from "next/navigation";
 import { Link } from "@/i18n/routing";
-import { getCurrentUser, getAuthorDashboard } from "@/server/queries";
+import { getCurrentUser, getActiveBook, getAuthorDashboard } from "@/server/queries";
 import { formatDH, formatDate } from "@/lib/utils";
 
 const activityIcons = {
@@ -46,22 +47,34 @@ export default async function AuthorDashboard({
 
   const user = await getCurrentUser();
   if (!user) redirect(`/${locale}`);
-  const d = await getAuthorDashboard(user.id);
 
-  if (!d) {
+  const active = await getActiveBook(user.id);
+  // No book yet → send the author to the onboarding flow.
+  if (!active) redirect(`/${locale}/author/start`);
+
+  const tb = await getTranslations("books");
+  // Book awaiting admin validation → show a waiting screen, not the dashboard.
+  if (active.status === "PENDING_VALIDATION") {
     return (
-      <div className="space-y-6">
-        <PageHeader title={`${t("welcome")}, ${user.name.split(" ")[0]} 👋`} subtitle={t("welcomeSub")} />
+      <div className="mx-auto max-w-2xl space-y-6">
+        <PageHeader title={tb("pendingTitle")} subtitle={tb("pendingSubtitle")} />
         <Card>
-          <CardContent className="py-12 text-center text-muted-foreground">
-            {locale === "fr"
-              ? "Aucun livre n'est encore associé à votre compte."
-              : "No book is linked to your account yet."}
+          <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-warning/15 text-warning">
+              <Clock className="h-7 w-7" />
+            </div>
+            <div>
+              <p className="text-lg font-semibold">{active.bookTitle}</p>
+              <p className="mt-1 max-w-md text-sm text-muted-foreground">{tb("pendingBody")}</p>
+            </div>
           </CardContent>
         </Card>
       </div>
     );
   }
+
+  const d = await getAuthorDashboard(active.id);
+  if (!d) redirect(`/${locale}/author/start`);
 
   const paid = d.payments.reduce((s, p) => s + p.amount, 0);
   const remaining = d.contractTotal - paid;

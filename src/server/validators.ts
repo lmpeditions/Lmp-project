@@ -110,6 +110,12 @@ export const requestResetSchema = z.object({
   email: z.string().email().max(200),
 });
 
+/** Author starts a new book from the onboarding page. */
+export const createBookSchema = z.object({
+  bookTitle: z.string().min(1).max(300),
+  description: z.string().max(2000).optional(),
+});
+
 /** Set a password from an activation or reset token. */
 export const setPasswordSchema = z
   .object({

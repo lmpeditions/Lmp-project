@@ -114,7 +114,15 @@ export async function createAuthorAction(
     });
 
     const token = await createInviteToken(user.id, "ACTIVATION");
-    const activationLink = await sendActivationEmail(user.email, user.name, token, locale);
+    const base = process.env.AUTH_URL ?? "http://localhost:3000";
+    const activationLink = `${base}/${locale}/activate/${token}`;
+    try {
+      await sendActivationEmail(user.email, user.name, token, locale);
+    } catch (mailErr) {
+      // Email failure must not block author creation; the admin can still
+      // share the activation link shown in the UI.
+      console.error("[createAuthorAction] e-mail d'activation non envoyé:", mailErr);
+    }
 
     await audit({
       actorId: session.sub,

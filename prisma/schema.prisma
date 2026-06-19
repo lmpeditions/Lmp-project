@@ -41,6 +41,7 @@ enum Locale {
 }
 
 enum DossierStatus {
+  PENDING_VALIDATION
   IN_PROGRESS
   COMPLETED
   ON_HOLD
@@ -176,6 +177,7 @@ model Dossier {
   id                   String        @id @default(cuid())
   trackingNumber       String        @unique // e.g. #LMP20260001
   bookTitle            String
+  description          String?
   formula              String
   status               DossierStatus @default(IN_PROGRESS)
   globalProgress       Int           @default(0)

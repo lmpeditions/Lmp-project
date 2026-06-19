@@ -1,5 +1,6 @@
 import { prisma } from "./prisma";
 import { getSession } from "./auth";
+import { readActiveBookCookie } from "./active-book";
 import type {
   ActivityItem,
   Dossier as ViewDossier,
@@ -62,15 +63,49 @@ export async function getCurrentUser() {
   return prisma.user.findUnique({ where: { id: session.sub } });
 }
 
-/**
- * The author's primary (most recent) dossier, mapped to the view `Dossier`
- * shape the dashboard expects. Returns null if the author has no dossier yet.
- * Multi-book selection (quick-switch) arrives in a later lot.
- */
-export async function getAuthorDashboard(userId: string): Promise<ViewDossier | null> {
-  const dossier = await prisma.dossier.findFirst({
+export interface BookSummary {
+  id: string;
+  trackingNumber: string;
+  bookTitle: string;
+  status: string;
+  globalProgress: number;
+}
+
+/** All of an author's books, newest first — feeds the quick-switch. */
+export async function getAuthorBooks(userId: string): Promise<BookSummary[]> {
+  return prisma.dossier.findMany({
     where: { authorId: userId },
     orderBy: { createdAt: "desc" },
+    select: { id: true, trackingNumber: true, bookTitle: true, status: true, globalProgress: true },
+  });
+}
+
+/**
+ * Resolve the author's active book: the one stored in the cookie if still
+ * owned, else the most recent non-pending book, else the most recent book.
+ */
+export async function getActiveBook(
+  userId: string,
+): Promise<{ id: string; status: string; bookTitle: string } | null> {
+  const books = await prisma.dossier.findMany({
+    where: { authorId: userId },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, status: true, bookTitle: true },
+  });
+  if (books.length === 0) return null;
+  const cookieId = await readActiveBookCookie();
+  const fromCookie = cookieId ? books.find((b) => b.id === cookieId) : undefined;
+  if (fromCookie) return fromCookie;
+  return books.find((b) => b.status !== "PENDING_VALIDATION") ?? books[0];
+}
+
+/**
+ * Dashboard data for one specific book, mapped to the view `Dossier` shape.
+ * Returns null if the dossier no longer exists.
+ */
+export async function getAuthorDashboard(dossierId: string): Promise<ViewDossier | null> {
+  const dossier = await prisma.dossier.findUnique({
+    where: { id: dossierId },
     include: {
       author: { select: { name: true } },
       manager: { select: { name: true } },
@@ -82,7 +117,7 @@ export async function getAuthorDashboard(userId: string): Promise<ViewDossier | 
   if (!dossier) return null;
 
   const notifications = await prisma.notification.findMany({
-    where: { userId, dossierId: dossier.id },
+    where: { userId: dossier.authorId, dossierId: dossier.id },
     orderBy: { createdAt: "desc" },
     take: 5,
   });
