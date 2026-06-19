@@ -21,8 +21,9 @@ import { Progress } from "@/components/ui/progress";
 import { PageHeader } from "@/components/shared/page-header";
 import { ProgressGauge } from "@/components/author/progress-gauge";
 import { StageTimeline } from "@/components/author/stage-timeline";
+import { redirect } from "next/navigation";
 import { Link } from "@/i18n/routing";
-import { demoDossier } from "@/lib/mock-data";
+import { getCurrentUser, getAuthorDashboard } from "@/server/queries";
 import { formatDH, formatDate } from "@/lib/utils";
 
 const activityIcons = {
@@ -42,7 +43,25 @@ export default async function AuthorDashboard({
   setRequestLocale(locale);
   const t = await getTranslations("dashboard");
   const tc = await getTranslations("common");
-  const d = demoDossier;
+
+  const user = await getCurrentUser();
+  if (!user) redirect(`/${locale}`);
+  const d = await getAuthorDashboard(user.id);
+
+  if (!d) {
+    return (
+      <div className="space-y-6">
+        <PageHeader title={`${t("welcome")}, ${user.name.split(" ")[0]} 👋`} subtitle={t("welcomeSub")} />
+        <Card>
+          <CardContent className="py-12 text-center text-muted-foreground">
+            {locale === "fr"
+              ? "Aucun livre n'est encore associé à votre compte."
+              : "No book is linked to your account yet."}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const paid = d.payments.reduce((s, p) => s + p.amount, 0);
   const remaining = d.contractTotal - paid;

@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
 
 /**
@@ -20,7 +21,7 @@ export async function audit(params: {
         dossierId: params.dossierId ?? null,
         action: params.action,
         entity: params.entity,
-        meta: params.meta ?? undefined,
+        meta: params.meta ? (params.meta as Prisma.InputJsonValue) : Prisma.JsonNull,
         ip: params.ip ?? null,
       },
     });

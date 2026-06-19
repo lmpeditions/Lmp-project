@@ -1,10 +1,11 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Bell, Search } from "lucide-react";
+import { Bell, Search, LogOut } from "lucide-react";
 import { Link } from "@/i18n/routing";
 import { ThemeToggle } from "./theme-toggle";
 import { LanguageSwitcher } from "./language-switcher";
+import { logoutAction } from "@/server/auth-actions";
 
 interface TopbarProps {
   userName: string;
@@ -70,6 +71,17 @@ export function Topbar({ userName, userRole, notifications = 0, notificationsHre
             <p className="text-xs text-muted-foreground">{userRole}</p>
           </div>
         </div>
+
+        <form action={logoutAction}>
+          <button
+            type="submit"
+            aria-label={tCommon("logout")}
+            title={tCommon("logout")}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-card transition-colors hover:bg-muted"
+          >
+            <LogOut className="h-[1.05rem] w-[1.05rem]" />
+          </button>
+        </form>
       </div>
     </header>
   );

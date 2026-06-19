@@ -19,8 +19,7 @@
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  // src/server (Prisma/auth layer) and prisma/ require `prisma generate` + a
-  // database. They are excluded from the demo build (mock-data path) and
-  // type-checked once you run `npm run db:generate`. See README → "Activer le back-end".
-  "exclude": ["node_modules", "src/server", "prisma"]
+  // The Prisma client is generated and the back-end is active (Lot 0).
+  // `prisma/` (seed.ts) runs via tsx, separately from the Next build.
+  "exclude": ["node_modules", "prisma"]
 }

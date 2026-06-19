@@ -1,8 +1,11 @@
-import { setRequestLocale, getTranslations } from "next-intl/server";
-import { Link } from "@/i18n/routing";
-import { BookMarked, ShieldCheck, ArrowRight, LayoutDashboard } from "lucide-react";
+import { getTranslations } from "next-intl/server";
+import { redirect } from "next/navigation";
+import { BookMarked, ShieldCheck } from "lucide-react";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { LanguageSwitcher } from "@/components/shared/language-switcher";
+import { LoginForm } from "@/components/auth/login-form";
+import { getSession } from "@/server/auth";
+import { isStaff } from "@/server/rbac";
 
 export default async function LoginPage({
   params,
@@ -10,7 +13,13 @@ export default async function LoginPage({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  setRequestLocale(locale);
+
+  // Already signed in → go straight to the right space.
+  const session = await getSession();
+  if (session) {
+    redirect(`/${locale}/${isStaff(session.role) ? "admin" : "author"}`);
+  }
+
   const t = await getTranslations("auth");
   const tc = await getTranslations("common");
 
@@ -68,50 +77,7 @@ export default async function LoginPage({
             <h1 className="text-2xl font-bold tracking-tight">{t("loginTitle")}</h1>
             <p className="mt-1.5 text-sm text-muted-foreground">{t("loginSubtitle")}</p>
 
-            <form className="mt-8 space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium">{t("email")}</label>
-                <input
-                  type="email"
-                  defaultValue="yasmine.elamrani@exemple.ma"
-                  className="h-11 w-full rounded-md border border-border bg-card px-3.5 text-sm outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/30"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium">{t("password")}</label>
-                  <span className="text-xs text-primary hover:underline">
-                    {t("forgotPassword")}
-                  </span>
-                </div>
-                <input
-                  type="password"
-                  defaultValue="demo1234"
-                  className="h-11 w-full rounded-md border border-border bg-card px-3.5 text-sm outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/30"
-                />
-              </div>
-            </form>
-
-            <div className="mt-6 rounded-lg border border-dashed border-border bg-muted/40 p-3 text-center text-xs text-muted-foreground">
-              {t("demoHint")}
-            </div>
-
-            <div className="mt-4 grid gap-3">
-              <Link
-                href="/author"
-                className="group flex h-12 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm shadow-primary/30 transition-all hover:opacity-90 active:scale-[0.99]"
-              >
-                {t("demoAuthor")}
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-              </Link>
-              <Link
-                href="/admin"
-                className="group flex h-12 items-center justify-center gap-2 rounded-md border border-border bg-card px-4 text-sm font-semibold transition-all hover:bg-muted active:scale-[0.99]"
-              >
-                <LayoutDashboard className="h-4 w-4" />
-                {t("demoAdmin")}
-              </Link>
-            </div>
+            <LoginForm />
           </div>
         </div>
       </div>
