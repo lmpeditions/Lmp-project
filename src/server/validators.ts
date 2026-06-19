@@ -116,6 +116,32 @@ export const createBookSchema = z.object({
   description: z.string().max(2000).optional(),
 });
 
+/** Editorial remark added by an admin on the Relecture/Correction stage. */
+export const remarkSchema = z.object({
+  dossierId: z.string().min(1),
+  title: z.string().min(1).max(200),
+  description: z.string().min(1).max(4000),
+  attachmentName: z.string().max(200).optional(),
+  attachmentUrl: z.string().url().max(500).optional().or(z.literal("")),
+});
+
+/** A message posted to a stage conversation thread (author or editor). */
+export const stageMessageSchema = z.object({
+  dossierId: z.string().min(1),
+  body: z.string().min(1).max(5000),
+  attachmentName: z.string().max(200).optional(),
+  attachmentUrl: z.string().url().max(500).optional().or(z.literal("")),
+});
+
+/** Admin updates the merged Relecture/Correction stage. */
+export const updateReviewSchema = z.object({
+  dossierId: z.string().min(1),
+  isbn: z.string().max(40).optional(),
+  legalDeposit: z.string().max(40).optional(),
+  relectureProgress: z.coerce.number().int().min(0).max(100),
+  correctionProgress: z.coerce.number().int().min(0).max(100),
+});
+
 /** Set a password from an activation or reset token. */
 export const setPasswordSchema = z
   .object({

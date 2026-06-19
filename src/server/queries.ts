@@ -1,6 +1,11 @@
 import { prisma } from "./prisma";
 import { getSession } from "./auth";
+import { isStaff } from "./rbac";
 import { readActiveBookCookie } from "./active-book";
+
+export type Attachment = { name: string; url: string };
+const asAttachments = (v: unknown): Attachment[] =>
+  Array.isArray(v) ? (v as Attachment[]) : [];
 import type {
   ActivityItem,
   Dossier as ViewDossier,
@@ -159,4 +164,121 @@ export async function getAuthorDashboard(dossierId: string): Promise<ViewDossier
       type: notificationActivityType[n.type] ?? "stage",
     })),
   };
+}
+
+export interface RemarkView {
+  id: string;
+  title: string;
+  description: string;
+  attachments: Attachment[];
+  authorName: string;
+  date: string;
+}
+export interface ThreadMessage {
+  id: string;
+  side: "author" | "lmp";
+  senderName: string;
+  body: string;
+  attachments: Attachment[];
+  date: string;
+}
+export interface ReviewData {
+  dossierId: string;
+  trackingNumber: string;
+  bookTitle: string;
+  authorName: string;
+  isbn: string | null;
+  legalDeposit: string | null;
+  relecture: { status: ViewStageStatus; progress: number };
+  correction: { status: ViewStageStatus; progress: number };
+  remarks: RemarkView[];
+  messages: ThreadMessage[];
+}
+
+/** Merged Relecture + Correction stage: progress, ISBN/legal deposit, remarks, thread. */
+export async function getReviewData(dossierId: string): Promise<ReviewData | null> {
+  const dossier = await prisma.dossier.findUnique({
+    where: { id: dossierId },
+    select: {
+      id: true,
+      trackingNumber: true,
+      bookTitle: true,
+      isbn: true,
+      legalDeposit: true,
+      author: { select: { name: true } },
+      stages: { where: { type: { in: ["RELECTURE", "CORRECTION"] } } },
+    },
+  });
+  if (!dossier) return null;
+
+  const rel = dossier.stages.find((s) => s.type === "RELECTURE");
+  const cor = dossier.stages.find((s) => s.type === "CORRECTION");
+
+  const [remarks, messages] = await Promise.all([
+    prisma.editorialRemark.findMany({
+      where: { dossierId, stage: "REVIEW" },
+      orderBy: { createdAt: "desc" },
+      include: { createdBy: { select: { name: true } } },
+    }),
+    prisma.stageMessage.findMany({
+      where: { dossierId, stage: "REVIEW" },
+      orderBy: { createdAt: "asc" },
+      include: { sender: { select: { name: true, role: true } } },
+    }),
+  ]);
+
+  return {
+    dossierId: dossier.id,
+    trackingNumber: dossier.trackingNumber,
+    bookTitle: dossier.bookTitle,
+    authorName: dossier.author.name,
+    isbn: dossier.isbn,
+    legalDeposit: dossier.legalDeposit,
+    relecture: { status: stageStatusMap[rel?.status ?? "UPCOMING"], progress: rel?.progress ?? 0 },
+    correction: { status: stageStatusMap[cor?.status ?? "UPCOMING"], progress: cor?.progress ?? 0 },
+    remarks: remarks.map((r) => ({
+      id: r.id,
+      title: r.title,
+      description: r.description,
+      attachments: asAttachments(r.attachments),
+      authorName: r.createdBy?.name ?? "LMP",
+      date: r.createdAt.toISOString(),
+    })),
+    messages: messages.map((m) => ({
+      id: m.id,
+      side: isStaff(m.sender.role) ? "lmp" : "author",
+      senderName: m.sender.name,
+      body: m.body,
+      attachments: asAttachments(m.attachments),
+      date: m.createdAt.toISOString(),
+    })),
+  };
+}
+
+export interface AdminDossierRow {
+  id: string;
+  trackingNumber: string;
+  bookTitle: string;
+  authorName: string;
+  editor: string;
+  progress: number;
+  status: string;
+}
+
+/** Real (validated) dossiers for the admin list, linking to their detail page. */
+export async function getAdminDossiers(): Promise<AdminDossierRow[]> {
+  const rows = await prisma.dossier.findMany({
+    where: { status: { not: "PENDING_VALIDATION" } },
+    orderBy: { createdAt: "desc" },
+    include: { author: { select: { name: true } }, manager: { select: { name: true } } },
+  });
+  return rows.map((d) => ({
+    id: d.id,
+    trackingNumber: d.trackingNumber,
+    bookTitle: d.bookTitle,
+    authorName: d.author.name,
+    editor: d.manager?.name ?? "—",
+    progress: d.globalProgress,
+    status: d.status,
+  }));
 }
