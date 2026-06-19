@@ -24,7 +24,7 @@ gère l'ensemble des dossiers depuis un back-office complet.
 | Base de données | PostgreSQL · Prisma 6 (Docker en local ou Supabase) |
 | Auth | Sessions JWT (HS256) httpOnly + RBAC · bcrypt |
 | Validation | Zod |
-| E-mail | Nodemailer (console en dev) |
+| E-mail | Resend (console en dev) |
 
 ---
 
@@ -110,7 +110,7 @@ npm run db:seed
 - `src/server/rbac.ts` — permissions par rôle, `requireRole`, `requirePermission`, `assertDossierAccess`.
 - `src/server/validators.ts` — schémas Zod pour chaque mutation.
 - `src/server/dossier-service.ts` — n° de suivi auto (`#LMP{année}{séquence}`), recalcul de progression, mise à jour d'étape → notification + audit.
-- `src/server/notifications.ts` — in-app + e-mail (Nodemailer).
+- `src/server/notifications.ts` — in-app + e-mail (Resend).
 - `src/server/audit.ts` — journal d'audit (ActivityLog).
 - `src/server/rate-limit.ts` — limitation de débit (auth & routes sensibles).
 
