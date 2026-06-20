@@ -52,9 +52,33 @@ export const updateStageSchema = z.object({
 export const recordPaymentSchema = z.object({
   dossierId: z.string(),
   date: z.coerce.date(),
-  amount: z.number().int().positive(),
+  amount: z.coerce.number().int().positive(),
   method: z.enum(["TRANSFER", "CASH", "CARD"]),
   reference: z.string().min(1).max(100),
+  invoiceUrl: z.string().url().max(500), // facture obligatoire
+});
+
+/** Author declares a cash payment by uploading its invoice (link). */
+export const uploadInvoiceSchema = z.object({
+  dossierId: z.string(),
+  amount: z.coerce.number().int().positive(),
+  reference: z.string().max(100).optional(),
+  invoiceUrl: z.string().url().max(500),
+});
+
+/** Admin adds a financial movement (entrée / sortie). */
+export const ledgerEntrySchema = z.object({
+  dossierId: z.string(),
+  direction: z.enum(["IN", "OUT"]),
+  amount: z.coerce.number().int().positive(),
+  label: z.string().min(1).max(200),
+  date: z.coerce.date(),
+});
+
+/** Admin sets the financing strategy (replaces the previous value). */
+export const financingStrategySchema = z.object({
+  dossierId: z.string(),
+  strategy: z.string().max(4000),
 });
 
 export const createTicketSchema = z.object({
@@ -140,6 +164,43 @@ export const updateReviewSchema = z.object({
   legalDeposit: z.string().max(40).optional(),
   relectureProgress: z.coerce.number().int().min(0).max(100),
   correctionProgress: z.coerce.number().int().min(0).max(100),
+});
+
+const optLabel = z.string().min(1).max(200);
+const optUrl = z.string().url().max(500).optional().or(z.literal(""));
+
+/** Admin sends a validation request — always 4 models. */
+export const createValidationSchema = z.object({
+  dossierId: z.string().min(1),
+  kind: z.enum(["CORRECTION", "COVER", "LAYOUT"]),
+  title: z.string().min(1).max(200),
+  option1Label: optLabel,
+  option1Url: optUrl,
+  option2Label: optLabel,
+  option2Url: optUrl,
+  option3Label: optLabel,
+  option3Url: optUrl,
+  option4Label: optLabel,
+  option4Url: optUrl,
+});
+
+/** Author responds to a validation request (validate a model or ask changes). */
+export const respondValidationSchema = z
+  .object({
+    requestId: z.string().min(1),
+    decision: z.enum(["validate", "changes"]),
+    selectedOptionId: z.string().optional(),
+    comment: z.string().max(2000).optional(),
+  })
+  .refine((d) => d.decision !== "validate" || !!d.selectedOptionId, {
+    message: "OPTION_REQUIRED",
+    path: ["selectedOptionId"],
+  });
+
+/** Editor decides on an expired request (delay lapsed). */
+export const editorDecideSchema = z.object({
+  requestId: z.string().min(1),
+  selectedOptionId: z.string().min(1),
 });
 
 /** Set a password from an activation or reset token. */

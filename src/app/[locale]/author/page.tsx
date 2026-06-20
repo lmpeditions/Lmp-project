@@ -24,7 +24,7 @@ import { StageTimeline } from "@/components/author/stage-timeline";
 import { Clock } from "lucide-react";
 import { redirect } from "next/navigation";
 import { Link } from "@/i18n/routing";
-import { getCurrentUser, getActiveBook, getAuthorDashboard } from "@/server/queries";
+import { getCurrentUser, getActiveBook, getAuthorDashboard, getLedgerSummary } from "@/server/queries";
 import { formatDH, formatDate } from "@/lib/utils";
 
 const activityIcons = {
@@ -75,6 +75,7 @@ export default async function AuthorDashboard({
 
   const d = await getAuthorDashboard(active.id);
   if (!d) redirect(`/${locale}/author/start`);
+  const ledger = await getLedgerSummary(active.id);
 
   const paid = d.payments.reduce((s, p) => s + p.amount, 0);
   const remaining = d.contractTotal - paid;
@@ -173,6 +174,13 @@ export default async function AuthorDashboard({
               </div>
               <Progress value={(paid / d.contractTotal) * 100} indicatorClassName="bg-gradient-to-r from-primary to-accent" />
             </div>
+            {(ledger.in > 0 || ledger.out > 0) && (
+              <p className="text-xs text-muted-foreground">
+                {locale === "fr" ? "Mouvements" : "Movements"} :{" "}
+                <span className="font-medium text-success">+{formatDH(ledger.in, locale)}</span> /{" "}
+                <span className="font-medium text-danger">-{formatDH(ledger.out, locale)}</span> {tc("currency")}
+              </p>
+            )}
           </CardContent>
         </Card>
 
