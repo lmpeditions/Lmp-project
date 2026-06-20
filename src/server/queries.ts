@@ -255,6 +255,131 @@ export async function getReviewData(dossierId: string): Promise<ReviewData | nul
   };
 }
 
+export interface FinancePayment {
+  id: string;
+  date: string;
+  amount: number;
+  method: ViewPaymentMethod;
+  reference: string;
+  status: ViewPaymentStatus;
+  invoiceUrl: string | null;
+  byAuthor: boolean;
+}
+export interface LedgerEntryView {
+  id: string;
+  direction: "IN" | "OUT";
+  amount: number;
+  label: string;
+  date: string;
+}
+export interface FinanceData {
+  dossierId: string;
+  bookTitle: string;
+  contractTotal: number;
+  paid: number;
+  balance: number;
+  ledgerIn: number;
+  ledgerOut: number;
+  financingStrategy: string | null;
+  payments: FinancePayment[];
+  ledger: LedgerEntryView[];
+  schedule: { id: string; dueDate: string; amount: number }[];
+}
+
+/** Full finance view for a dossier: payments (+invoices), ledger, strategy, totals. */
+export async function getFinanceData(dossierId: string): Promise<FinanceData | null> {
+  const dossier = await prisma.dossier.findUnique({
+    where: { id: dossierId },
+    include: {
+      payments: { orderBy: { date: "desc" } },
+      ledgerEntries: { orderBy: { date: "desc" } },
+      schedules: { orderBy: { dueDate: "asc" } },
+    },
+  });
+  if (!dossier) return null;
+
+  const paid = dossier.payments
+    .filter((p) => p.status === "VALIDATED")
+    .reduce((s, p) => s + p.amount, 0);
+  const ledgerIn = dossier.ledgerEntries.filter((e) => e.direction === "IN").reduce((s, e) => s + e.amount, 0);
+  const ledgerOut = dossier.ledgerEntries.filter((e) => e.direction === "OUT").reduce((s, e) => s + e.amount, 0);
+
+  return {
+    dossierId: dossier.id,
+    bookTitle: dossier.bookTitle,
+    contractTotal: dossier.contractTotal,
+    paid,
+    balance: dossier.contractTotal - paid,
+    ledgerIn,
+    ledgerOut,
+    financingStrategy: dossier.financingStrategy,
+    payments: dossier.payments.map((p) => ({
+      id: p.id,
+      date: p.date.toISOString(),
+      amount: p.amount,
+      method: paymentMethodMap[p.method],
+      reference: p.reference,
+      status: paymentStatusMap[p.status],
+      invoiceUrl: p.invoiceUrl,
+      byAuthor: !!p.uploadedById,
+    })),
+    ledger: dossier.ledgerEntries.map((e) => ({
+      id: e.id,
+      direction: e.direction,
+      amount: e.amount,
+      label: e.label,
+      date: e.date.toISOString(),
+    })),
+    schedule: dossier.schedules.map((s) => ({ id: s.id, dueDate: s.dueDate.toISOString(), amount: s.amount })),
+  };
+}
+
+/** Net financial movements for a dossier (for the author dashboard). */
+export async function getLedgerSummary(dossierId: string): Promise<{ in: number; out: number }> {
+  const entries = await prisma.ledgerEntry.findMany({ where: { dossierId }, select: { direction: true, amount: true } });
+  return {
+    in: entries.filter((e) => e.direction === "IN").reduce((s, e) => s + e.amount, 0),
+    out: entries.filter((e) => e.direction === "OUT").reduce((s, e) => s + e.amount, 0),
+  };
+}
+
+export type ValidationOption = { id: string; label: string; url: string };
+export interface ValidationView {
+  id: string;
+  kind: "CORRECTION" | "COVER" | "LAYOUT";
+  title: string;
+  status: "PENDING" | "VALIDATED" | "CHANGES_REQUESTED" | "EXPIRED_TO_EDITOR";
+  options: ValidationOption[];
+  selectedOptionId: string | null;
+  authorComment: string | null;
+  deadline: string;
+  locked: boolean;
+  expired: boolean; // deadline passed while still PENDING
+  createdAt: string;
+}
+
+/** All validation requests for a dossier, newest first, with expiry computed. */
+export async function getDossierValidations(dossierId: string): Promise<ValidationView[]> {
+  const rows = await prisma.validationRequest.findMany({
+    where: { dossierId },
+    orderBy: { createdAt: "desc" },
+  });
+  const now = Date.now();
+  return rows.map((v) => ({
+    id: v.id,
+    kind: v.kind,
+    title: v.title,
+    status: v.status,
+    options: Array.isArray(v.options) ? (v.options as ValidationOption[]) : [],
+    selectedOptionId: v.selectedOptionId,
+    authorComment: v.authorComment,
+    deadline: v.deadline.toISOString(),
+    locked: v.locked,
+    expired: v.status === "PENDING" && v.deadline.getTime() < now,
+    createdAt: v.createdAt.toISOString(),
+  }));
+}
+
 export interface AdminDossierRow {
   id: string;
   trackingNumber: string;

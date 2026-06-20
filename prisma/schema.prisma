@@ -123,6 +123,24 @@ enum TerminationStatus {
   CLOSED
 }
 
+enum ValidationKind {
+  CORRECTION // relecture / correction
+  COVER // couverture
+  LAYOUT // mise en page
+}
+
+enum ValidationStatus {
+  PENDING
+  VALIDATED // author approved a model
+  CHANGES_REQUESTED // author asked for changes
+  EXPIRED_TO_EDITOR // 7-day delay passed → editor decides
+}
+
+enum LedgerDirection {
+  IN // entrée
+  OUT // sortie
+}
+
 // ------------------------------- Models -----------------------------------
 
 model User {
@@ -156,6 +174,7 @@ model User {
   inviteTokens     InviteToken[]
   editorialRemarks EditorialRemark[]
   stageMessages    StageMessage[]
+  validations      ValidationRequest[]
 
   @@index([role])
   @@index([status])
@@ -182,6 +201,7 @@ model Dossier {
   description          String?
   isbn                 String?
   legalDeposit         String? // numéro de dépôt légal
+  financingStrategy    String? // remplace (ne s'empile pas)
   formula              String
   status               DossierStatus @default(IN_PROGRESS)
   globalProgress       Int           @default(0)
@@ -207,6 +227,8 @@ model Dossier {
   termination      TerminationRequest?
   remarks          EditorialRemark[]
   stageMessages    StageMessage[]
+  validations      ValidationRequest[]
+  ledgerEntries    LedgerEntry[]
 
   @@index([authorId])
   @@index([managerId])
@@ -262,16 +284,59 @@ model StageMessage {
   @@index([dossierId, stage])
 }
 
+// A validation request: always 4 models sent to the author, 7-day deadline.
+// If the delay passes, the decision reverts to the editor. Once a CORRECTION
+// request is validated it is locked (irreversible; further changes are billed).
+model ValidationRequest {
+  id               String           @id @default(cuid())
+  dossierId        String
+  dossier          Dossier          @relation(fields: [dossierId], references: [id], onDelete: Cascade)
+  kind             ValidationKind
+  title            String
+  options          Json // [{ id, label, url }] — the 4 models
+  status           ValidationStatus @default(PENDING)
+  selectedOptionId String?
+  authorComment    String?
+  deadline         DateTime
+  locked           Boolean          @default(false)
+  createdById      String?
+  createdBy        User?            @relation(fields: [createdById], references: [id])
+  decidedById      String? // who finalized (author or editor)
+  decidedAt        DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@index([dossierId])
+  @@index([status])
+}
+
 model Payment {
-  id        String        @id @default(cuid())
-  dossierId String
-  dossier   Dossier       @relation(fields: [dossierId], references: [id], onDelete: Cascade)
-  date      DateTime
-  amount    Int
-  method    PaymentMethod
-  reference String
-  status    PaymentStatus @default(PENDING)
-  createdAt DateTime      @default(now())
+  id           String        @id @default(cuid())
+  dossierId    String
+  dossier      Dossier       @relation(fields: [dossierId], references: [id], onDelete: Cascade)
+  date         DateTime
+  amount       Int
+  method       PaymentMethod
+  reference    String
+  status       PaymentStatus @default(PENDING)
+  invoiceUrl   String? // facture obligatoire pour enregistrer un paiement
+  uploadedById String? // l'auteur quand il téléverse une facture cash
+  createdAt    DateTime      @default(now())
+
+  @@index([dossierId])
+}
+
+// Free-form financial movements (entrées / sorties) added by an admin.
+model LedgerEntry {
+  id          String          @id @default(cuid())
+  dossierId   String
+  dossier     Dossier         @relation(fields: [dossierId], references: [id], onDelete: Cascade)
+  direction   LedgerDirection
+  amount      Int
+  label       String
+  date        DateTime
+  createdById String?
+  createdAt   DateTime        @default(now())
 
   @@index([dossierId])
 }
