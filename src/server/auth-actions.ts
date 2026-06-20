@@ -41,6 +41,7 @@ export async function loginAction(
     const code = e instanceof Error ? e.message : "";
     if (code === "ACCOUNT_SUSPENDED") return { error: "accountSuspended" };
     if (code === "INVALID_CREDENTIALS") return { error: "invalidCredentials" };
+    console.error("[loginAction] erreur inattendue:", e);
     return { error: "loginError" };
   }
 
