@@ -32,7 +32,6 @@ export function LoginForm() {
           type="email"
           required
           autoComplete="email"
-          defaultValue="yasmine.elamrani@exemple.ma"
           className={inputClass}
         />
       </div>
@@ -52,7 +51,6 @@ export function LoginForm() {
           type="password"
           required
           autoComplete="current-password"
-          defaultValue="demo1234"
           className={inputClass}
         />
       </div>
@@ -75,14 +73,6 @@ export function LoginForm() {
         )}
       </button>
 
-      <div className="rounded-lg border border-dashed border-border bg-muted/40 p-3 text-xs text-muted-foreground">
-        <p className="mb-1 font-semibold">{t("demoAccounts")}</p>
-        <ul className="space-y-0.5">
-          <li>karim.benali@lmp.ma — {t("demoAdmin")}</li>
-          <li>yasmine.elamrani@exemple.ma — {t("demoAuthor")}</li>
-          <li className="opacity-70">{t("password")}: demo1234</li>
-        </ul>
-      </div>
     </form>
   );
 }

@@ -1,8 +1,10 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { login, setSessionCookie, clearSessionCookie, verifyToken } from "./auth";
 import { isStaff } from "./rbac";
+import { rateLimit, clientIp } from "./rate-limit";
 import { loginSchema } from "./validators";
 
 /**
@@ -11,13 +13,19 @@ import { loginSchema } from "./validators";
  */
 
 export interface LoginState {
-  error?: "invalidCredentials" | "accountSuspended" | "loginError";
+  error?: "invalidCredentials" | "accountSuspended" | "loginError" | "tooManyAttempts";
 }
 
 export async function loginAction(
   _prev: LoginState,
   formData: FormData,
 ): Promise<LoginState> {
+  // Throttle by client IP to slow brute-force attempts.
+  const ip = clientIp(await headers());
+  if (!rateLimit(`login:${ip}`, { limit: 8, windowMs: 60_000 }).ok) {
+    return { error: "tooManyAttempts" };
+  }
+
   const parsed = loginSchema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),

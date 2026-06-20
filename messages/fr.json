@@ -77,6 +77,7 @@
     "invalidCredentials": "E-mail ou mot de passe incorrect.",
     "accountSuspended": "Ce compte est suspendu. Contactez LMP.",
     "loginError": "Une erreur est survenue. Veuillez réessayer.",
+    "tooManyAttempts": "Trop de tentatives. Réessayez dans une minute.",
     "demoAccounts": "Comptes de démonstration",
     "demoAuthor": "Démo Auteur",
     "demoAdmin": "Démo Admin",
