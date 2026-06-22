@@ -134,6 +134,19 @@ export const requestResetSchema = z.object({
   email: z.string().email().max(200),
 });
 
+/** Public author self-registration. */
+export const signupSchema = z
+  .object({
+    name: z.string().min(1).max(200),
+    email: z.string().email().max(200),
+    password: z.string().min(8).max(200),
+    confirm: z.string().min(8).max(200),
+  })
+  .refine((d) => d.password === d.confirm, {
+    message: "PASSWORDS_DO_NOT_MATCH",
+    path: ["confirm"],
+  });
+
 /** Author starts a new book from the onboarding page. */
 export const createBookSchema = z.object({
   bookTitle: z.string().min(1).max(300),

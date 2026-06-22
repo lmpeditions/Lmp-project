@@ -82,7 +82,9 @@
     "demoAuthor": "Author Demo",
     "demoAdmin": "Admin Demo",
     "demoHint": "Demo: choose a space to explore the portal",
-    "secureAccess": "Secure access reserved for authors under LMP contract"
+    "secureAccess": "Secure access reserved for authors under LMP contract",
+    "noAccount": "No account yet?",
+    "createAccount": "Create an account"
   },
   "crm": {
     "newAuthorTitle": "Create an author",
@@ -137,6 +139,22 @@
     "errInvalidToken": "This link is invalid or has expired.",
     "errServer": "Something went wrong. Please try again.",
     "resetOk": "Password updated. You can now sign in."
+  },
+  "signup": {
+    "title": "Create your author account",
+    "subtitle": "Join LMP éditions and start tracking your book.",
+    "name": "Full name",
+    "email": "Email address",
+    "password": "Password",
+    "confirm": "Confirm password",
+    "passwordHint": "At least 8 characters.",
+    "submit": "Create my account",
+    "submitting": "Creating…",
+    "errorEmailTaken": "An account already exists with this email address.",
+    "errorMismatch": "The two passwords do not match.",
+    "errorWeak": "Password must be at least 8 characters.",
+    "errorTooMany": "Too many attempts. Try again in a minute.",
+    "errorServer": "Something went wrong. Please try again."
   },
   "books": {
     "startTitle": "Start publishing with LMPéditions",

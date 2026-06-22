@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 import { BookMarked, ShieldCheck } from "lucide-react";
+import { Link } from "@/i18n/routing";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { LanguageSwitcher } from "@/components/shared/language-switcher";
 import { LoginForm } from "@/components/auth/login-form";
@@ -78,6 +79,13 @@ export default async function LoginPage({
             <p className="mt-1.5 text-sm text-muted-foreground">{t("loginSubtitle")}</p>
 
             <LoginForm />
+
+            <p className="mt-6 text-center text-sm text-muted-foreground">
+              {t("noAccount")}{" "}
+              <Link href="/signup" className="font-medium text-primary hover:underline">
+                {t("createAccount")}
+              </Link>
+            </p>
           </div>
         </div>
       </div>

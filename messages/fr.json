@@ -82,7 +82,9 @@
     "demoAuthor": "Démo Auteur",
     "demoAdmin": "Démo Admin",
     "demoHint": "Démo : choisissez un espace pour explorer le portail",
-    "secureAccess": "Accès sécurisé réservé aux auteurs sous contrat LMP"
+    "secureAccess": "Accès sécurisé réservé aux auteurs sous contrat LMP",
+    "noAccount": "Pas encore de compte ?",
+    "createAccount": "Créer un compte"
   },
   "crm": {
     "newAuthorTitle": "Créer un auteur",
@@ -137,6 +139,22 @@
     "errInvalidToken": "Ce lien est invalide ou a expiré.",
     "errServer": "Une erreur est survenue. Réessayez.",
     "resetOk": "Mot de passe mis à jour. Vous pouvez vous connecter."
+  },
+  "signup": {
+    "title": "Créer votre compte auteur",
+    "subtitle": "Rejoignez LMP éditions et lancez le suivi de votre livre.",
+    "name": "Nom complet",
+    "email": "Adresse e-mail",
+    "password": "Mot de passe",
+    "confirm": "Confirmer le mot de passe",
+    "passwordHint": "Au moins 8 caractères.",
+    "submit": "Créer mon compte",
+    "submitting": "Création…",
+    "errorEmailTaken": "Un compte existe déjà avec cette adresse e-mail.",
+    "errorMismatch": "Les deux mots de passe ne correspondent pas.",
+    "errorWeak": "Le mot de passe doit contenir au moins 8 caractères.",
+    "errorTooMany": "Trop de tentatives. Réessayez dans une minute.",
+    "errorServer": "Une erreur est survenue. Réessayez."
   },
   "books": {
     "startTitle": "Démarrer l'édition avec LMPéditions",
