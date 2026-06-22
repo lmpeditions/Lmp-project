@@ -19,6 +19,7 @@ const statusMap: Record<string, UserStatus> = {
   INVITED: "invited",
 };
 
+export const dynamic = "force-dynamic";
 export default async function AdminUsersPage({
   params,
 }: {

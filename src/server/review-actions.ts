@@ -76,13 +76,17 @@ export async function addRemarkAction(
   }
 }
 
-/** Post a message to the Relecture/Correction thread (author or editor). */
+const ALLOWED_STAGES = ["REVIEW", "LAYOUT", "COMMUNICATION"];
+
+/** Post a message to a stage conversation thread (author or editor). */
 export async function postReviewMessageAction(
   _prev: ReviewActionState,
   formData: FormData,
 ): Promise<ReviewActionState> {
   let session;
   const dossierId = String(formData.get("dossierId") || "");
+  const stageRaw = String(formData.get("stage") || "REVIEW");
+  const stage = ALLOWED_STAGES.includes(stageRaw) ? stageRaw : "REVIEW";
   try {
     session = await assertDossierAccess(dossierId);
   } catch (e) {
@@ -102,7 +106,7 @@ export async function postReviewMessageAction(
     await prisma.stageMessage.create({
       data: {
         dossierId: d.dossierId,
-        stage: "REVIEW",
+        stage,
         senderId: session.sub,
         body: d.body,
         attachments: attachmentJson(d.attachmentName, d.attachmentUrl || undefined),
@@ -121,7 +125,7 @@ export async function postReviewMessageAction(
           dossierId: d.dossierId,
           type: "STAGE",
           title: fromStaff ? "Nouveau message de l'équipe LMP" : "Nouveau message de l'auteur",
-          body: "Vous avez un nouveau message sur la relecture / correction.",
+          body: "Vous avez un nouveau message sur votre projet.",
           email: false,
         });
       }

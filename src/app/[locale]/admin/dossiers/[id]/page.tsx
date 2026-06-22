@@ -12,9 +12,10 @@ import { CreateValidationForm } from "@/components/admin/create-validation-form"
 import { ValidationAdminList } from "@/components/admin/validation-admin-list";
 import { FinanceManager } from "@/components/admin/finance-manager";
 import { confirmPaymentAction } from "@/server/finance-actions";
-import { getReviewData, getDossierValidations, getFinanceData } from "@/server/queries";
+import { getReviewData, getDossierValidations, getFinanceData, getStageMessages } from "@/server/queries";
 import { formatDH, formatDate } from "@/lib/utils";
 
+export const dynamic = "force-dynamic";
 export default async function AdminDossierDetail({
   params,
 }: {
@@ -32,6 +33,10 @@ export default async function AdminDossierDetail({
   const validations = await getDossierValidations(id);
   const finance = await getFinanceData(id);
   const pendingPayments = finance?.payments.filter((p) => p.status === "pending") ?? [];
+  const layoutMessages = await getStageMessages(id, "LAYOUT");
+  const communicationMessages = await getStageMessages(id, "COMMUNICATION");
+  const tComm = await getTranslations("communication");
+  const tLayout = await getTranslations("miseEnPage");
 
   return (
     <div className="space-y-6">
@@ -116,6 +121,26 @@ export default async function AdminDossierDetail({
         </CardHeader>
         <CardContent>
           <StageThread messages={r.messages} dossierId={r.dossierId} perspective="lmp" />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex-row items-center gap-2">
+          <MessageSquareText className="h-4 w-4 text-primary" />
+          <CardTitle>{tLayout("title")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <StageThread messages={layoutMessages} dossierId={r.dossierId} perspective="lmp" stage="LAYOUT" />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex-row items-center gap-2">
+          <MessageSquareText className="h-4 w-4 text-primary" />
+          <CardTitle>{tComm("title")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <StageThread messages={communicationMessages} dossierId={r.dossierId} perspective="lmp" stage="COMMUNICATION" />
         </CardContent>
       </Card>
     </div>

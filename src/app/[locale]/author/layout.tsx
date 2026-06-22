@@ -8,6 +8,10 @@ import { getCurrentUser, getAuthorBooks, getActiveBook } from "@/server/queries"
 import { isStaff } from "@/server/rbac";
 import { prisma } from "@/server/prisma";
 
+// Authed, data-driven space: always render live (never statically cache),
+// so figures are real-time and the build never queries the database.
+export const dynamic = "force-dynamic";
+
 export default async function AuthorLayout({
   children,
   params,

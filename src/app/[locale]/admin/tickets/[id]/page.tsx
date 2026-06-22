@@ -1,16 +1,16 @@
 import { setRequestLocale, getTranslations } from "next-intl/server";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/shared/page-header";
 import { TicketThread } from "@/components/shared/ticket-thread";
 import { Link } from "@/i18n/routing";
-import { getCurrentUser, getTicket } from "@/server/queries";
+import { getTicket } from "@/server/queries";
 import { ticketStatusTone } from "@/lib/status";
 
 export const dynamic = "force-dynamic";
-export default async function TicketDetailPage({
+export default async function AdminTicketDetailPage({
   params,
 }: {
   params: Promise<{ locale: string; id: string }>;
@@ -19,15 +19,12 @@ export default async function TicketDetailPage({
   setRequestLocale(locale);
   const t = await getTranslations("tickets");
 
-  const user = await getCurrentUser();
-  if (!user) redirect(`/${locale}`);
   const ticket = await getTicket(id);
   if (!ticket) notFound();
-  if (ticket.authorId !== user.id) redirect(`/${locale}/author/tickets`);
 
   return (
     <div className="space-y-6">
-      <Link href="/author/tickets" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary">
+      <Link href="/admin/tickets" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary">
         <ArrowLeft className="h-4 w-4" /> {t("backToList")}
       </Link>
 
@@ -41,7 +38,7 @@ export default async function TicketDetailPage({
           </Badge>
         </CardHeader>
         <CardContent>
-          <TicketThread ticketId={ticket.id} messages={ticket.messages} perspective="author" />
+          <TicketThread ticketId={ticket.id} messages={ticket.messages} perspective="lmp" />
         </CardContent>
       </Card>
     </div>

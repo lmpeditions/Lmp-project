@@ -17,10 +17,12 @@ export function StageThread({
   messages,
   dossierId,
   perspective,
+  stage = "REVIEW",
 }: {
   messages: ThreadMessage[];
   dossierId: string;
   perspective: "author" | "lmp";
+  stage?: string;
 }) {
   const t = useTranslations("review");
   const locale = useLocale();
@@ -78,6 +80,7 @@ export function StageThread({
 
       <form ref={formRef} action={formAction} className="space-y-2 border-t border-border pt-4">
         <input type="hidden" name="dossierId" value={dossierId} />
+        <input type="hidden" name="stage" value={stage} />
         <textarea name="body" required rows={2} placeholder={t("messagePlaceholder")} className={inputClass} />
         <div className="flex flex-col gap-2 sm:flex-row">
           <input name="attachmentName" placeholder={t("attachmentName")} className={inputClass} />

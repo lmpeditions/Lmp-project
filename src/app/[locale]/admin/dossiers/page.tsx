@@ -11,6 +11,7 @@ import { prisma } from "@/server/prisma";
 import { getAdminDossiers } from "@/server/queries";
 import { adminStats } from "@/lib/mock-data";
 
+export const dynamic = "force-dynamic";
 export default async function AdminDossiersPage({
   params,
 }: {

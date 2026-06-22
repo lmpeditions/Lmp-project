@@ -424,7 +424,19 @@
       "content": "E. Contenu du livre",
       "financial": "F. Documents financiers",
       "communication": "G. Communication"
-    }
+    },
+    "internalNote": "Les documents internes de production ne vous sont pas divulgués ici — vous en suivez l’avancement dans les autres onglets.",
+    "uploadTitle": "Déposer un document",
+    "uploadHint": "Vous pouvez déposer le lien de votre introduction ou de votre table des matières.",
+    "yourDocuments": "Vos documents",
+    "noDocuments": "Aucun document déposé.",
+    "introduction": "Introduction",
+    "toc": "Table des matières",
+    "link": "Lien du document",
+    "send": "Déposer",
+    "uploaded": "Document déposé.",
+    "uploadError": "Impossible de déposer le document.",
+    "open": "Ouvrir"
   },
   "couverture": {
     "title": "Conception de Couverture",
@@ -496,7 +508,12 @@
       "communication": "Communication",
       "technical": "Technique",
       "termination": "Résiliation"
-    }
+    },
+    "noTickets": "Aucun ticket.",
+    "send": "Envoyer",
+    "replyError": "Impossible d’envoyer le message.",
+    "noBook": "Vous devez d’abord avoir un livre actif.",
+    "createError": "Veuillez vérifier les champs."
   },
   "resiliation": {
     "title": "Résiliation de la Procédure d'Édition",
@@ -514,7 +531,11 @@
       "review": "Étude du dossier par LMP",
       "decision": "Validation ou refus motivé",
       "closure": "Clôture administrative"
-    }
+    },
+    "reasonLabel": "Motif de la demande (optionnel)",
+    "ack": "Je comprends les conséquences et je confirme ma demande de résiliation.",
+    "alreadyRequested": "Une demande de résiliation est déjà en cours pour ce livre.",
+    "errorGeneric": "Une erreur est survenue. Réessayez."
   },
   "profil": {
     "title": "Mon Profil",

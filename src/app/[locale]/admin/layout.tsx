@@ -6,6 +6,10 @@ import { MobileNav } from "@/components/shared/mobile-nav";
 import { getCurrentUser } from "@/server/queries";
 import { isStaff } from "@/server/rbac";
 
+// Authed, data-driven space: always render live (never statically cache),
+// so figures are real-time and the build never queries the database.
+export const dynamic = "force-dynamic";
+
 const roleLabel: Record<string, string> = {
   SUPER_ADMIN: "Super Admin · LMP",
   ADMIN: "Admin · LMP",

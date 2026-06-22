@@ -8,6 +8,7 @@ import { RevenueChart } from "@/components/charts/revenue-chart";
 import { StageChart } from "@/components/charts/stage-chart";
 import { getAdminStats } from "@/server/queries";
 
+export const dynamic = "force-dynamic";
 export default async function AdminStatisticsPage({
   params,
 }: {

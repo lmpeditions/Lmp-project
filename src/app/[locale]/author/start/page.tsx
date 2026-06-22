@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { StartBookForm } from "@/components/author/start-book-form";
 
+export const dynamic = "force-dynamic";
 export default async function StartBookPage({
   params,
 }: {

@@ -555,3 +555,186 @@ export async function getAuthorNotifications(userId: string): Promise<Notificati
     read: n.read,
   }));
 }
+
+// ----------------------------------------------------------------- Per-stage threads & ISBN
+
+/** Messages of a given stage thread (REVIEW | LAYOUT | COMMUNICATION). */
+export async function getStageMessages(dossierId: string, stage: string): Promise<ThreadMessage[]> {
+  const rows = await prisma.stageMessage.findMany({
+    where: { dossierId, stage },
+    orderBy: { createdAt: "asc" },
+    include: { sender: { select: { name: true, role: true } } },
+  });
+  return rows.map((m) => ({
+    id: m.id,
+    side: isStaff(m.sender.role) ? "lmp" : "author",
+    senderName: m.sender.name,
+    body: m.body,
+    attachments: asAttachments(m.attachments),
+    date: m.createdAt.toISOString(),
+  }));
+}
+
+export interface IsbnInfo {
+  isbn: string | null;
+  legalDeposit: string | null;
+  isbnStatus: ViewStageStatus;
+  contratStatus: ViewStageStatus;
+}
+
+/** ISBN + legal deposit + the related stage statuses for a book. */
+export async function getIsbnInfo(dossierId: string): Promise<IsbnInfo | null> {
+  const d = await prisma.dossier.findUnique({
+    where: { id: dossierId },
+    select: { isbn: true, legalDeposit: true, stages: { where: { type: { in: ["ISBN", "CONTRAT"] } } } },
+  });
+  if (!d) return null;
+  const isbnStage = d.stages.find((s) => s.type === "ISBN");
+  const contrat = d.stages.find((s) => s.type === "CONTRAT");
+  return {
+    isbn: d.isbn,
+    legalDeposit: d.legalDeposit,
+    isbnStatus: stageStatusMap[isbnStage?.status ?? "UPCOMING"],
+    contratStatus: stageStatusMap[contrat?.status ?? "UPCOMING"],
+  };
+}
+
+// ----------------------------------------------------------------- Termination / Documents / Tickets
+
+const terminationStatusView: Record<string, "notStarted" | "submitted" | "review" | "decision" | "closed"> = {
+  NOT_STARTED: "notStarted",
+  SUBMITTED: "submitted",
+  REVIEW: "review",
+  DECISION: "decision",
+  CLOSED: "closed",
+};
+
+export interface TerminationView {
+  status: "notStarted" | "submitted" | "review" | "decision" | "closed";
+  reason: string | null;
+  exists: boolean;
+}
+
+/** A book's termination request status (or "not started" if none). */
+export async function getTermination(dossierId: string): Promise<TerminationView> {
+  const tr = await prisma.terminationRequest.findUnique({ where: { dossierId } });
+  return {
+    status: tr ? terminationStatusView[tr.status] : "notStarted",
+    reason: tr?.reason ?? null,
+    exists: !!tr,
+  };
+}
+
+export interface DocView {
+  id: string;
+  name: string;
+  url: string;
+  date: string;
+}
+
+/** The author's OWN uploaded documents (intro / table of contents only). */
+export async function getAuthorDocuments(dossierId: string, userId: string): Promise<DocView[]> {
+  const rows = await prisma.document.findMany({
+    where: { dossierId, uploadedById: userId },
+    orderBy: { createdAt: "desc" },
+  });
+  return rows.map((d) => ({ id: d.id, name: d.name, url: d.url, date: d.createdAt.toISOString() }));
+}
+
+const ticketStatusView: Record<string, "open" | "inProgress" | "waiting" | "resolved" | "closed"> = {
+  OPEN: "open",
+  IN_PROGRESS: "inProgress",
+  WAITING: "waiting",
+  RESOLVED: "resolved",
+  CLOSED: "closed",
+};
+const ticketCategoryView: Record<string, string> = {
+  GENERAL: "general",
+  COMPLAINT: "complaint",
+  FINANCE: "finance",
+  PROOFREADING: "proofreading",
+  COVER: "cover",
+  COMMUNICATION: "communication",
+  TECHNICAL: "technical",
+  TERMINATION: "termination",
+};
+
+export interface TicketRow {
+  id: string;
+  ref: string;
+  subject: string;
+  category: string;
+  status: "open" | "inProgress" | "waiting" | "resolved" | "closed";
+  updatedAt: string;
+  authorName?: string;
+  trackingNumber?: string;
+}
+
+/** Tickets created by an author across their books. */
+export async function getAuthorTickets(userId: string): Promise<TicketRow[]> {
+  const rows = await prisma.ticket.findMany({
+    where: { authorId: userId },
+    orderBy: { updatedAt: "desc" },
+  });
+  return rows.map((t) => ({
+    id: t.id,
+    ref: t.ref,
+    subject: t.subject,
+    category: ticketCategoryView[t.category] ?? "general",
+    status: ticketStatusView[t.status],
+    updatedAt: t.updatedAt.toISOString(),
+  }));
+}
+
+/** All tickets for the back-office, newest first. */
+export async function getAdminTickets(): Promise<TicketRow[]> {
+  const rows = await prisma.ticket.findMany({
+    orderBy: { updatedAt: "desc" },
+    include: { author: { select: { name: true } }, dossier: { select: { trackingNumber: true } } },
+  });
+  return rows.map((t) => ({
+    id: t.id,
+    ref: t.ref,
+    subject: t.subject,
+    category: ticketCategoryView[t.category] ?? "general",
+    status: ticketStatusView[t.status],
+    updatedAt: t.updatedAt.toISOString(),
+    authorName: t.author.name,
+    trackingNumber: t.dossier.trackingNumber,
+  }));
+}
+
+export interface TicketDetail {
+  id: string;
+  ref: string;
+  subject: string;
+  category: string;
+  status: "open" | "inProgress" | "waiting" | "resolved" | "closed";
+  authorId: string;
+  messages: ThreadMessage[];
+}
+
+/** One ticket with its conversation, if the current viewer may access it. */
+export async function getTicket(ticketId: string): Promise<TicketDetail | null> {
+  const t = await prisma.ticket.findUnique({
+    where: { id: ticketId },
+    include: { messages: { orderBy: { createdAt: "asc" }, include: { sender: { select: { name: true, role: true } } } } },
+  });
+  if (!t) return null;
+  return {
+    id: t.id,
+    ref: t.ref,
+    subject: t.subject,
+    category: ticketCategoryView[t.category] ?? "general",
+    status: ticketStatusView[t.status],
+    authorId: t.authorId,
+    messages: t.messages.map((m) => ({
+      id: m.id,
+      side: isStaff(m.sender.role) ? "lmp" : "author",
+      senderName: m.sender.name,
+      body: m.body,
+      attachments: asAttachments(m.attachments),
+      date: m.createdAt.toISOString(),
+    })),
+  };
+}

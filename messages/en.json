@@ -424,7 +424,19 @@
       "content": "E. Book content",
       "financial": "F. Financial documents",
       "communication": "G. Communication"
-    }
+    },
+    "internalNote": "Internal production documents are not disclosed here — you follow their progress in the other tabs.",
+    "uploadTitle": "Upload a document",
+    "uploadHint": "You can submit a link to your introduction or table of contents.",
+    "yourDocuments": "Your documents",
+    "noDocuments": "No document uploaded.",
+    "introduction": "Introduction",
+    "toc": "Table of contents",
+    "link": "Document link",
+    "send": "Upload",
+    "uploaded": "Document uploaded.",
+    "uploadError": "Could not upload the document.",
+    "open": "Open"
   },
   "couverture": {
     "title": "Cover Design",
@@ -496,7 +508,12 @@
       "communication": "Communication",
       "technical": "Technical",
       "termination": "Termination"
-    }
+    },
+    "noTickets": "No tickets.",
+    "send": "Send",
+    "replyError": "Could not send the message.",
+    "noBook": "You need an active book first.",
+    "createError": "Please check the fields."
   },
   "resiliation": {
     "title": "Termination of the Publishing Process",
@@ -514,7 +531,11 @@
       "review": "Case review by LMP",
       "decision": "Approval or reasoned refusal",
       "closure": "Administrative closure"
-    }
+    },
+    "reasonLabel": "Reason for the request (optional)",
+    "ack": "I understand the consequences and confirm my termination request.",
+    "alreadyRequested": "A termination request is already in progress for this book.",
+    "errorGeneric": "Something went wrong. Please try again."
   },
   "profil": {
     "title": "My Profile",

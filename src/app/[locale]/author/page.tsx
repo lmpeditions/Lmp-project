@@ -35,6 +35,7 @@ const activityIcons = {
   cover: ImageIcon,
 } as const;
 
+export const dynamic = "force-dynamic";
 export default async function AuthorDashboard({
   params,
 }: {

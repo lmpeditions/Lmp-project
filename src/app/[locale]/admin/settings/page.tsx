@@ -18,6 +18,7 @@ const matrix: Record<(typeof MODULES)[number], Record<(typeof ROLES)[number], bo
   settings: { superAdmin: true, admin: false, manager: false, author: false },
 };
 
+export const dynamic = "force-dynamic";
 export default async function AdminSettingsPage({
   params,
 }: {

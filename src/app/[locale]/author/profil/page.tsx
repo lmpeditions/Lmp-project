@@ -8,6 +8,7 @@ import { ActionButton } from "@/components/shared/action-button";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/server/queries";
 
+export const dynamic = "force-dynamic";
 export default async function ProfilPage({
   params,
 }: {

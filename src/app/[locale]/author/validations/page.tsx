@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { ValidationCard } from "@/components/author/validation-card";
 import { getCurrentUser, getActiveBook, getDossierValidations, type ValidationView } from "@/server/queries";
 
+export const dynamic = "force-dynamic";
 export default async function ValidationsPage({
   params,
 }: {

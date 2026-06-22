@@ -81,27 +81,6 @@ export const financingStrategySchema = z.object({
   strategy: z.string().max(4000),
 });
 
-export const createTicketSchema = z.object({
-  dossierId: z.string(),
-  subject: z.string().min(1).max(300),
-  category: z.enum([
-    "GENERAL",
-    "COMPLAINT",
-    "FINANCE",
-    "PROOFREADING",
-    "COVER",
-    "COMMUNICATION",
-    "TECHNICAL",
-    "TERMINATION",
-  ]),
-  body: z.string().min(1).max(5000),
-});
-
-export const ticketReplySchema = z.object({
-  ticketId: z.string(),
-  body: z.string().min(1).max(5000),
-});
-
 export const updateProfileSchema = z.object({
   name: z.string().min(1).max(200),
   phone: z.string().max(40).optional(),
@@ -132,6 +111,32 @@ export const createAuthorSchema = z.object({
 
 export const requestResetSchema = z.object({
   email: z.string().email().max(200),
+});
+
+/** Author opens a support ticket. */
+export const createTicketSchema = z.object({
+  subject: z.string().min(1).max(200),
+  category: z.enum(["GENERAL", "COMPLAINT", "FINANCE", "PROOFREADING", "COVER", "COMMUNICATION", "TECHNICAL"]),
+  body: z.string().min(1).max(5000),
+});
+
+/** Reply to a ticket. */
+export const ticketReplySchema = z.object({
+  ticketId: z.string().min(1),
+  body: z.string().min(1).max(5000),
+});
+
+/** Author uploads their introduction or table of contents (link). */
+export const authorDocumentSchema = z.object({
+  dossierId: z.string().min(1),
+  kind: z.enum(["introduction", "toc"]),
+  url: z.string().url().max(500),
+});
+
+/** Author requests termination of a book contract. */
+export const terminationSchema = z.object({
+  dossierId: z.string().min(1),
+  reason: z.string().max(2000).optional(),
 });
 
 /** Public author self-registration. */

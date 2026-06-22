@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { NotificationList } from "@/components/author/notification-list";
 import { getCurrentUser, getAuthorNotifications } from "@/server/queries";
 
+export const dynamic = "force-dynamic";
 export default async function NotificationsPage({
   params,
 }: {

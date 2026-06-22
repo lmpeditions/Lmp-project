@@ -2,6 +2,7 @@ import { setRequestLocale, getTranslations } from "next-intl/server";
 import { PageHeader } from "@/components/shared/page-header";
 import { CreateAuthorForm } from "@/components/admin/create-author-form";
 
+export const dynamic = "force-dynamic";
 export default async function NewAuthorPage({
   params,
 }: {

@@ -8,6 +8,7 @@ import { RemarksList } from "@/components/author/remarks-list";
 import { StageThread } from "@/components/shared/stage-thread";
 import { getCurrentUser, getActiveBook, getReviewData } from "@/server/queries";
 
+export const dynamic = "force-dynamic";
 export default async function RelecturePage({
   params,
 }: {
