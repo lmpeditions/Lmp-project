@@ -1,7 +1,8 @@
 import { setRequestLocale, getTranslations } from "next-intl/server";
+import { redirect } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { NotificationList } from "@/components/author/notification-list";
-import { notificationsList } from "@/lib/mock-data";
+import { getCurrentUser, getAuthorNotifications } from "@/server/queries";
 
 export default async function NotificationsPage({
   params,
@@ -12,10 +13,14 @@ export default async function NotificationsPage({
   setRequestLocale(locale);
   const t = await getTranslations("notifications");
 
+  const user = await getCurrentUser();
+  if (!user) redirect(`/${locale}`);
+  const items = await getAuthorNotifications(user.id);
+
   return (
     <div className="space-y-6">
       <PageHeader title={t("title")} subtitle={t("subtitle")} />
-      <NotificationList items={notificationsList} locale={locale} />
+      <NotificationList items={items} locale={locale} />
     </div>
   );
 }

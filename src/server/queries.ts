@@ -8,7 +8,11 @@ const asAttachments = (v: unknown): Attachment[] =>
   Array.isArray(v) ? (v as Attachment[]) : [];
 import type {
   ActivityItem,
+  AdminPaymentRow,
+  AdminStats,
   Dossier as ViewDossier,
+  NotificationItem,
+  NotificationType as ViewNotificationType,
   PaymentMethod as ViewPaymentMethod,
   PaymentStatus as ViewPaymentStatus,
   StageStatus as ViewStageStatus,
@@ -405,5 +409,149 @@ export async function getAdminDossiers(): Promise<AdminDossierRow[]> {
     editor: d.manager?.name ?? "—",
     progress: d.globalProgress,
     status: d.status,
+  }));
+}
+
+// ----------------------------------------------------------------- Admin aggregates
+
+const STAGE_DB_TYPES = ["CONTRAT", "ISBN", "RELECTURE", "CORRECTION", "COUVERTURE", "MISE_EN_PAGE", "COMMUNICATION", "PUBLICATION"] as const;
+
+const dossierStatusView: Record<string, "inProgress" | "completed" | "onHold"> = {
+  IN_PROGRESS: "inProgress",
+  COMPLETED: "completed",
+  ON_HOLD: "onHold",
+  CANCELLED: "onHold",
+};
+
+const activityLabels: Record<string, { label: string; type: ActivityItem["type"] }> = {
+  "author.created": { label: "Nouvel auteur créé", type: "stage" },
+  "book.created": { label: "Nouveau livre soumis", type: "stage" },
+  "book.validated": { label: "Livre validé", type: "stage" },
+  "stage.updated": { label: "Étape mise à jour", type: "stage" },
+  "review.updated": { label: "Relecture / correction mise à jour", type: "stage" },
+  "remark.added": { label: "Remarque éditoriale ajoutée", type: "document" },
+  "validation.created": { label: "Demande de validation envoyée", type: "cover" },
+  "validation.editorDecided": { label: "Décision de validation (éditeur)", type: "cover" },
+  "payment.recorded": { label: "Paiement enregistré", type: "payment" },
+  "payment.confirmed": { label: "Paiement confirmé", type: "payment" },
+  "ledger.added": { label: "Mouvement financier", type: "payment" },
+  "financing.updated": { label: "Stratégie de financement mise à jour", type: "payment" },
+};
+
+/** Real back-office statistics computed live from the database. */
+export async function getAdminStats(): Promise<AdminStats> {
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  const [totalClients, clientsNewThisMonth, totalProjects, inProgress, completed, collectedAgg, pendingAgg] =
+    await Promise.all([
+      prisma.user.count({ where: { role: "AUTHOR" } }),
+      prisma.user.count({ where: { role: "AUTHOR", createdAt: { gte: startOfMonth } } }),
+      prisma.dossier.count({ where: { status: { not: "PENDING_VALIDATION" } } }),
+      prisma.dossier.count({ where: { status: "IN_PROGRESS" } }),
+      prisma.dossier.count({ where: { status: "COMPLETED" } }),
+      prisma.payment.aggregate({ where: { status: "VALIDATED" }, _sum: { amount: true } }),
+      prisma.paymentSchedule.aggregate({ where: { paid: false }, _sum: { amount: true } }),
+    ]);
+
+  // Monthly buckets (last 6 months)
+  const months = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+    return { key: `${d.getFullYear()}-${d.getMonth()}`, label: d.toLocaleString("fr-FR", { month: "short" }), collected: 0, pending: 0 };
+  });
+  const monthOf = (date: Date) => months.find((m) => m.key === `${date.getFullYear()}-${date.getMonth()}`);
+
+  const [paidPayments, unpaidSchedules, inProgStages, logs, dossiers] = await Promise.all([
+    prisma.payment.findMany({ where: { status: "VALIDATED" }, select: { amount: true, date: true } }),
+    prisma.paymentSchedule.findMany({ where: { paid: false }, select: { amount: true, dueDate: true } }),
+    prisma.stage.findMany({ where: { status: "IN_PROGRESS" }, select: { type: true } }),
+    prisma.activityLog.findMany({ orderBy: { createdAt: "desc" }, take: 6 }),
+    prisma.dossier.findMany({
+      where: { status: { not: "PENDING_VALIDATION" } },
+      orderBy: { createdAt: "desc" },
+      take: 20,
+      include: {
+        author: { select: { name: true } },
+        manager: { select: { name: true } },
+        tickets: { where: { status: { in: ["OPEN", "IN_PROGRESS", "WAITING"] } }, select: { id: true } },
+      },
+    }),
+  ]);
+
+  for (const p of paidPayments) monthOf(p.date) && (monthOf(p.date)!.collected += p.amount);
+  for (const s of unpaidSchedules) monthOf(s.dueDate) && (monthOf(s.dueDate)!.pending += s.amount);
+
+  const stageCounts: Record<string, number> = {};
+  for (const s of inProgStages) stageCounts[s.type] = (stageCounts[s.type] ?? 0) + 1;
+
+  return {
+    totalClients,
+    clientsNewThisMonth,
+    totalProjects,
+    inProgress,
+    completed,
+    revenueCollected: collectedAgg._sum.amount ?? 0,
+    revenuePending: pendingAgg._sum.amount ?? 0,
+    revenueByMonth: months.map((m) => ({ month: m.label, collected: m.collected, pending: m.pending })),
+    stageDistribution: STAGE_DB_TYPES.map((t) => ({ stage: stageTypeMap[t], count: stageCounts[t] ?? 0 })),
+    recentActivity: logs.map((l) => ({
+      id: l.id,
+      date: l.createdAt.toISOString(),
+      label: activityLabels[l.action]?.label ?? l.action,
+      type: activityLabels[l.action]?.type ?? "stage",
+    })),
+    dossiers: dossiers.map((d) => ({
+      trackingNumber: d.trackingNumber,
+      authorName: d.author.name,
+      bookTitle: d.bookTitle,
+      editor: d.manager?.name ?? "—",
+      progress: d.globalProgress,
+      status: dossierStatusView[d.status] ?? "inProgress",
+      openTickets: d.tickets.length,
+    })),
+  };
+}
+
+/** Real payments across all dossiers, for the admin payments page. */
+export async function getAdminPayments(): Promise<AdminPaymentRow[]> {
+  const rows = await prisma.payment.findMany({
+    orderBy: { date: "desc" },
+    include: { dossier: { select: { trackingNumber: true, author: { select: { name: true } } } } },
+  });
+  return rows.map((p) => ({
+    id: p.id,
+    date: p.date.toISOString(),
+    trackingNumber: p.dossier.trackingNumber,
+    authorName: p.dossier.author.name,
+    amount: p.amount,
+    method: paymentMethodMap[p.method],
+    reference: p.reference,
+    status: paymentStatusMap[p.status],
+  }));
+}
+
+const notificationTypeView: Record<string, ViewNotificationType> = {
+  STAGE: "stage",
+  DOCUMENT: "document",
+  TICKET: "ticket",
+  PAYMENT: "payment",
+  VALIDATION: "validation",
+  TERMINATION: "termination",
+};
+
+/** A user's real notifications, newest first. */
+export async function getAuthorNotifications(userId: string): Promise<NotificationItem[]> {
+  const rows = await prisma.notification.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+    take: 50,
+  });
+  return rows.map((n) => ({
+    id: n.id,
+    type: notificationTypeView[n.type] ?? "stage",
+    title: n.title,
+    body: n.body,
+    date: n.createdAt.toISOString(),
+    read: n.read,
   }));
 }

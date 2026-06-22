@@ -5,7 +5,8 @@ import { PageHeader } from "@/components/shared/page-header";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { LanguageSwitcher } from "@/components/shared/language-switcher";
 import { ActionButton } from "@/components/shared/action-button";
-import { authorProfile } from "@/lib/mock-data";
+import { redirect } from "next/navigation";
+import { getCurrentUser } from "@/server/queries";
 
 export default async function ProfilPage({
   params,
@@ -16,7 +17,15 @@ export default async function ProfilPage({
   setRequestLocale(locale);
   const t = await getTranslations("profil");
   const tc = await getTranslations("common");
-  const p = authorProfile;
+
+  const user = await getCurrentUser();
+  if (!user) redirect(`/${locale}`);
+  const p = {
+    name: user.name,
+    email: user.email,
+    phone: user.phone ?? "",
+    address: user.address ?? "",
+  };
 
   const fields = [
     { icon: User, label: t("name"), value: p.name, type: "text" },

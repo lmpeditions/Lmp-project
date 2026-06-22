@@ -20,7 +20,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
 import { RevenueChart } from "@/components/charts/revenue-chart";
 import { StageChart } from "@/components/charts/stage-chart";
-import { adminStats } from "@/lib/mock-data";
+import { getAdminStats } from "@/server/queries";
 import { formatDH, formatDate } from "@/lib/utils";
 import { adminDossierStatusTone } from "@/lib/status";
 
@@ -41,7 +41,7 @@ export default async function AdminDashboard({
   setRequestLocale(locale);
   const t = await getTranslations("admin");
   const tc = await getTranslations("common");
-  const s = adminStats;
+  const s = await getAdminStats();
 
   return (
     <div className="space-y-6">
@@ -111,7 +111,7 @@ export default async function AdminDashboard({
             {formatDH(s.revenuePending, locale)} <span className="text-base text-muted-foreground">{tc("currency")}</span>
           </p>
           <Progress
-            value={(s.revenueCollected / (s.revenueCollected + s.revenuePending)) * 100}
+            value={s.revenueCollected + s.revenuePending > 0 ? (s.revenueCollected / (s.revenueCollected + s.revenuePending)) * 100 : 0}
             indicatorClassName="bg-gradient-to-r from-primary to-accent"
           />
           <p className="text-xs text-muted-foreground">

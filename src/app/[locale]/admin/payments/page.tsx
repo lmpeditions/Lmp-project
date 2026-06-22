@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/shared/page-header";
 import { ActionButton } from "@/components/shared/action-button";
-import { adminPayments } from "@/lib/mock-data";
+import { getAdminPayments } from "@/server/queries";
 import { formatDH, formatDate } from "@/lib/utils";
 import { paymentStatusTone } from "@/lib/status";
 
@@ -18,6 +18,8 @@ export default async function AdminPaymentsPage({
   const t = await getTranslations("adminPayments");
   const tF = await getTranslations("finances");
   const tc = await getTranslations("common");
+
+  const adminPayments = await getAdminPayments();
 
   const collected = adminPayments
     .filter((p) => p.status === "validated")

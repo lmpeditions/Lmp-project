@@ -6,7 +6,7 @@ import { StatCard } from "@/components/shared/stat-card";
 import { ActionButton } from "@/components/shared/action-button";
 import { RevenueChart } from "@/components/charts/revenue-chart";
 import { StageChart } from "@/components/charts/stage-chart";
-import { adminStats } from "@/lib/mock-data";
+import { getAdminStats } from "@/server/queries";
 
 export default async function AdminStatisticsPage({
   params,
@@ -18,12 +18,12 @@ export default async function AdminStatisticsPage({
   const t = await getTranslations("adminStats");
   const tAdmin = await getTranslations("admin");
   const tc = await getTranslations("common");
-  const s = adminStats;
+  const s = await getAdminStats();
 
-  const completionRate = Math.round((s.completed / s.totalProjects) * 100);
-  const avgProgress = Math.round(
-    s.dossiers.reduce((sum, d) => sum + d.progress, 0) / s.dossiers.length
-  );
+  const completionRate = s.totalProjects ? Math.round((s.completed / s.totalProjects) * 100) : 0;
+  const avgProgress = s.dossiers.length
+    ? Math.round(s.dossiers.reduce((sum, d) => sum + d.progress, 0) / s.dossiers.length)
+    : 0;
 
   return (
     <div className="space-y-6">
