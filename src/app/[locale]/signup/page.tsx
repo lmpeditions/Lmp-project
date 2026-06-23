@@ -1,7 +1,7 @@
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 import { AuthShell } from "@/components/auth/auth-shell";
-import { SignupForm } from "@/components/auth/signup-form";
+import { ApplicationForm } from "@/components/auth/application-form";
 import { getSession } from "@/server/auth";
 import { isStaff } from "@/server/rbac";
 
@@ -16,11 +16,11 @@ export default async function SignupPage({
   const session = await getSession();
   if (session) redirect(`/${locale}/${isStaff(session.role) ? "admin" : "author"}`);
 
-  const t = await getTranslations("signup");
+  const t = await getTranslations("apply");
 
   return (
     <AuthShell title={t("title")} subtitle={t("subtitle")}>
-      <SignupForm />
+      <ApplicationForm />
     </AuthShell>
   );
 }

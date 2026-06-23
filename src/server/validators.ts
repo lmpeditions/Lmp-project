@@ -8,6 +8,20 @@ import { z } from "zod";
 export const loginSchema = z.object({
   email: z.string().email().max(200),
   password: z.string().min(8).max(200),
+  // Authors must also supply their author number; admins leave it empty.
+  authorNumber: z.string().max(40).optional(),
+});
+
+/** Second-factor: the 6-digit code from the login e-mail. */
+export const verifyOtpSchema = z.object({
+  code: z.string().regex(/^\d{6}$/),
+});
+
+/** Admin creates another back-office user (admin / manager). No application. */
+export const createAdminSchema = z.object({
+  name: z.string().min(1).max(200),
+  email: z.string().email().max(200),
+  role: z.enum(["ADMIN", "MANAGER", "SUPER_ADMIN"]),
 });
 
 export const activateSchema = z
@@ -139,18 +153,16 @@ export const terminationSchema = z.object({
   reason: z.string().max(2000).optional(),
 });
 
-/** Public author self-registration. */
-export const signupSchema = z
-  .object({
-    name: z.string().min(1).max(200),
-    email: z.string().email().max(200),
-    password: z.string().min(8).max(200),
-    confirm: z.string().min(8).max(200),
-  })
-  .refine((d) => d.password === d.confirm, {
-    message: "PASSWORDS_DO_NOT_MATCH",
-    path: ["confirm"],
-  });
+/** Public author application (a candidature, NOT an account). */
+export const applicationSchema = z.object({
+  fullName: z.string().min(1).max(200),
+  email: z.string().email().max(200),
+  nationality: z.string().max(100).optional(),
+  phone: z.string().max(40).optional(),
+  cin: z.string().max(40).optional(),
+  address: z.string().max(300).optional(),
+  profession: z.string().max(120).optional(),
+});
 
 /** Author starts a new book from the onboarding page. */
 export const createBookSchema = z.object({

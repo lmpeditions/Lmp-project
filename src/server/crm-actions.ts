@@ -4,21 +4,18 @@ import { redirect } from "next/navigation";
 import type { StageType } from "@prisma/client";
 import { prisma } from "./prisma";
 import { requirePermission, AuthError } from "./rbac";
-import {
-  hashPassword,
-  setSessionCookie,
-  createToken as createSessionToken,
-} from "./auth";
+import { hashPassword } from "./auth";
 import {
   createToken as createInviteToken,
   verifyTokenRecord,
   markTokenUsed,
 } from "./tokens";
 import { sendActivationEmail, sendResetEmail } from "./emails";
-import { nextTrackingNumber } from "./dossier-service";
+import { nextTrackingNumber, nextAuthorNumber } from "./dossier-service";
 import { audit } from "./audit";
 import {
   createAuthorSchema,
+  createAdminSchema,
   requestResetSchema,
   setPasswordSchema,
 } from "./validators";
@@ -76,10 +73,12 @@ export async function createAuthorAction(
   if (existing) return { error: "emailTaken" };
 
   try {
+    const authorNumber = await nextAuthorNumber();
     const user = await prisma.user.create({
       data: {
         email,
         name: d.name,
+        authorNumber,
         nationality: d.nationality,
         phone: d.phone,
         cin: d.cin,
@@ -117,7 +116,7 @@ export async function createAuthorAction(
     const base = process.env.AUTH_URL ?? "http://localhost:3000";
     const activationLink = `${base}/${locale}/activate/${token}`;
     try {
-      await sendActivationEmail(user.email, user.name, token, locale);
+      await sendActivationEmail(user.email, user.name, token, locale, authorNumber);
     } catch (mailErr) {
       // Email failure must not block author creation; the admin can still
       // share the activation link shown in the UI.
@@ -135,6 +134,72 @@ export async function createAuthorAction(
     return { ok: true, activationLink, authorName: user.name };
   } catch (e) {
     console.error("[createAuthorAction]", e);
+    return { error: "server" };
+  }
+}
+
+// ---------------------------------------------------------------- Admin: create administrator
+
+export interface CreateAdminState {
+  error?: "validation" | "emailTaken" | "forbidden" | "server";
+  ok?: boolean;
+  activationLink?: string;
+  adminName?: string;
+}
+
+/**
+ * Create another back-office user (ADMIN / MANAGER / SUPER_ADMIN). Unlike
+ * authors there is no public application: an existing admin creates the account
+ * directly and an activation link is e-mailed so the new admin sets a password.
+ */
+export async function createAdminAction(
+  _prev: CreateAdminState,
+  formData: FormData,
+): Promise<CreateAdminState> {
+  let session;
+  try {
+    session = await requirePermission("user.manage");
+  } catch (e) {
+    if (e instanceof AuthError) return { error: "forbidden" };
+    throw e;
+  }
+
+  const parsed = createAdminSchema.safeParse({
+    name: formData.get("name"),
+    email: formData.get("email"),
+    role: formData.get("role"),
+  });
+  if (!parsed.success) return { error: "validation" };
+  const d = parsed.data;
+  const locale = String(formData.get("locale") || "fr");
+
+  const email = d.email.toLowerCase();
+  if (await prisma.user.findUnique({ where: { email } })) return { error: "emailTaken" };
+
+  try {
+    const user = await prisma.user.create({
+      data: { email, name: d.name, role: d.role, status: "INVITED" },
+    });
+
+    const token = await createInviteToken(user.id, "ACTIVATION");
+    const base = process.env.AUTH_URL ?? "http://localhost:3000";
+    const activationLink = `${base}/${locale}/activate/${token}`;
+    try {
+      await sendActivationEmail(user.email, user.name, token, locale);
+    } catch (mailErr) {
+      console.error("[createAdminAction] e-mail d'activation non envoyé:", mailErr);
+    }
+
+    await audit({
+      actorId: session.sub,
+      action: "admin.created",
+      entity: "User",
+      meta: { email: user.email, role: user.role },
+    });
+
+    return { ok: true, activationLink, adminName: user.name };
+  } catch (e) {
+    console.error("[createAdminAction]", e);
     return { error: "server" };
   }
 }
@@ -192,24 +257,16 @@ async function applyPassword(
 
   try {
     const hash = await hashPassword(parsed.data.password);
-    const user = await prisma.user.update({
+    await prisma.user.update({
       where: { id: rec.userId },
       data: { passwordHash: hash, status: "ACTIVE" },
     });
     await markTokenUsed(rec.id);
 
-    if (purpose === "ACTIVATION") {
-      // Auto sign-in the freshly activated author.
-      const sessionToken = createSessionToken({
-        sub: user.id,
-        role: user.role,
-        email: user.email,
-        name: user.name,
-      });
-      await setSessionCookie(sessionToken);
-      return { state: {}, redirectTo: `/${locale}/author` };
-    }
-    return { state: {}, redirectTo: `/${locale}?reset=ok` };
+    // No auto sign-in: the user must log in normally so the e-mail OTP second
+    // factor is always enforced (the activation token was a one-time link).
+    const flag = purpose === "ACTIVATION" ? "activated" : "reset";
+    return { state: {}, redirectTo: `/${locale}?${flag}=ok` };
   } catch (e) {
     console.error("[applyPassword]", e);
     return { state: { error: "server" } };

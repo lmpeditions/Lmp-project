@@ -112,20 +112,31 @@ export async function getSession(): Promise<SessionPayload | null> {
 }
 
 /**
- * Authenticate by email + password. Returns the signed token on success.
- * Throws on bad credentials or suspended account.
+ * Verify email + password (first factor). Returns the user record on success.
+ * Throws on bad credentials or a suspended account. Does NOT issue a session:
+ * the session is only created after the e-mail OTP second factor succeeds
+ * (see `finalizeLogin`), so a correct password alone grants no access.
  */
-export async function login(email: string, password: string): Promise<string> {
+export async function authenticate(email: string, password: string) {
   const user = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
   if (!user || !user.passwordHash) throw new Error("INVALID_CREDENTIALS");
   if (user.status === "SUSPENDED") throw new Error("ACCOUNT_SUSPENDED");
   const ok = await verifyPassword(password, user.passwordHash);
   if (!ok) throw new Error("INVALID_CREDENTIALS");
+  return user;
+}
 
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { lastActiveAt: new Date(), status: user.status === "INVITED" ? "ACTIVE" : user.status },
+/**
+ * Complete a login after the OTP has been validated: stamp the activity, flip
+ * a first-time INVITED account to ACTIVE, and return a fresh session token.
+ */
+export async function finalizeLogin(userId: string): Promise<string> {
+  const user = await prisma.user.update({
+    where: { id: userId },
+    data: { lastActiveAt: new Date() },
   });
-
+  if (user.status === "INVITED") {
+    await prisma.user.update({ where: { id: userId }, data: { status: "ACTIVE" } });
+  }
   return createToken({ sub: user.id, role: user.role, email: user.email, name: user.name });
 }

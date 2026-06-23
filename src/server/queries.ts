@@ -738,3 +738,36 @@ export async function getTicket(ticketId: string): Promise<TicketDetail | null> 
     })),
   };
 }
+
+// ----------------------------------------------------------------- Author applications
+
+export interface ApplicationView {
+  id: string;
+  fullName: string;
+  email: string;
+  nationality: string | null;
+  phone: string | null;
+  cin: string | null;
+  address: string | null;
+  profession: string | null;
+  createdAt: string;
+}
+
+/** Pending author applications awaiting admin review. */
+export async function getPendingApplications(): Promise<ApplicationView[]> {
+  const rows = await prisma.authorApplication.findMany({
+    where: { status: "PENDING" },
+    orderBy: { createdAt: "desc" },
+  });
+  return rows.map((a) => ({
+    id: a.id,
+    fullName: a.fullName,
+    email: a.email,
+    nationality: a.nationality,
+    phone: a.phone,
+    cin: a.cin,
+    address: a.address,
+    profession: a.profession,
+    createdAt: a.createdAt.toISOString(),
+  }));
+}

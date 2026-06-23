@@ -3,21 +3,32 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import {
-  login,
+  authenticate,
+  finalizeLogin,
   setSessionCookie,
   clearSessionCookie,
   verifyToken,
-  createToken,
-  hashPassword,
 } from "./auth";
+import {
+  issueOtp,
+  verifyOtp,
+  setPendingLogin,
+  getPendingLogin,
+  clearPendingLogin,
+} from "./otp";
+import { sendOtpEmail } from "./emails";
 import { prisma } from "./prisma";
 import { isStaff } from "./rbac";
 import { rateLimit, clientIp } from "./rate-limit";
-import { loginSchema, signupSchema } from "./validators";
+import { audit } from "./audit";
+import { loginSchema, verifyOtpSchema } from "./validators";
 
 /**
- * Server Actions for authentication (CSRF-safe by default in Next.js).
- * Used by the login form and the logout button.
+ * Authentication Server Actions (CSRF-safe by default in Next.js).
+ *
+ * Login is two-factor: stage 1 verifies e-mail + password (+ author number for
+ * authors) and e-mails a one-time code; no session is issued yet. Stage 2
+ * (`verifyOtpAction`) validates the code and only then sets the session cookie.
  */
 
 export interface LoginState {
@@ -37,14 +48,13 @@ export async function loginAction(
   const parsed = loginSchema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),
+    authorNumber: formData.get("authorNumber") || undefined,
   });
   if (!parsed.success) return { error: "invalidCredentials" };
 
-  let role: string | undefined;
+  let user;
   try {
-    const token = await login(parsed.data.email, parsed.data.password);
-    await setSessionCookie(token);
-    role = verifyToken(token)?.role;
+    user = await authenticate(parsed.data.email, parsed.data.password);
   } catch (e) {
     const code = e instanceof Error ? e.message : "";
     if (code === "ACCOUNT_SUSPENDED") return { error: "accountSuspended" };
@@ -53,69 +63,97 @@ export async function loginAction(
     return { error: "loginError" };
   }
 
+  // Authors must also match their author number (third credential). Generic
+  // error on mismatch so we never reveal which field was wrong.
+  if (user.role === "AUTHOR") {
+    const supplied = (parsed.data.authorNumber ?? "").trim().toUpperCase();
+    if (!supplied || supplied !== user.authorNumber?.toUpperCase()) {
+      return { error: "invalidCredentials" };
+    }
+  }
+
+  // First factor passed → start the second factor. No session yet.
+  try {
+    const code = await issueOtp(user.id);
+    await setPendingLogin(user.id);
+    await sendOtpEmail(user.email, user.name, code);
+  } catch (e) {
+    console.error("[loginAction] envoi du code échoué:", e);
+    return { error: "loginError" };
+  }
+
   const locale = String(formData.get("locale") || "fr");
+  redirect(`/${locale}/verify-otp`);
+}
+
+export interface VerifyOtpState {
+  error?: "invalidCode" | "expired" | "tooManyAttempts" | "expiredSession";
+}
+
+export async function verifyOtpAction(
+  _prev: VerifyOtpState,
+  formData: FormData,
+): Promise<VerifyOtpState> {
+  const userId = await getPendingLogin();
+  const locale = String(formData.get("locale") || "fr");
+  if (!userId) return { error: "expiredSession" };
+
+  const ip = clientIp(await headers());
+  if (!rateLimit(`otp:${ip}`, { limit: 10, windowMs: 60_000 }).ok) {
+    return { error: "tooManyAttempts" };
+  }
+
+  const parsed = verifyOtpSchema.safeParse({ code: formData.get("code") });
+  if (!parsed.success) return { error: "invalidCode" };
+
+  const result = await verifyOtp(userId, parsed.data.code);
+  if (result === "expired") return { error: "expired" };
+  if (result === "tooManyAttempts") return { error: "tooManyAttempts" };
+  if (result !== "ok") return { error: "invalidCode" };
+
+  // Second factor passed → issue the real session and clear the pending state.
+  const token = await finalizeLogin(userId);
+  await setSessionCookie(token);
+  await clearPendingLogin();
+  await audit({ actorId: userId, action: "auth.login", entity: "User" });
+
+  const role = verifyToken(token)?.role;
   const home = isStaff(role as never) ? "admin" : "author";
   redirect(`/${locale}/${home}`);
 }
 
-export interface SignupState {
-  error?: "emailTaken" | "mismatch" | "weak" | "tooManyAttempts" | "server";
+export interface ResendOtpState {
+  ok?: boolean;
+  error?: "expiredSession" | "tooManyAttempts" | "server";
 }
 
-/**
- * Public self-registration. Always creates an AUTHOR (never staff). The account
- * is active immediately, but every book still requires admin validation, so
- * registration stays "open but controlled".
- */
-export async function signupAction(
-  _prev: SignupState,
+export async function resendOtpAction(
+  _prev: ResendOtpState,
   formData: FormData,
-): Promise<SignupState> {
+): Promise<ResendOtpState> {
+  const userId = await getPendingLogin();
+  if (!userId) return { error: "expiredSession" };
+
   const ip = clientIp(await headers());
-  if (!rateLimit(`signup:${ip}`, { limit: 5, windowMs: 60_000 }).ok) {
+  if (!rateLimit(`otp-resend:${ip}`, { limit: 3, windowMs: 5 * 60_000 }).ok) {
     return { error: "tooManyAttempts" };
   }
 
-  const parsed = signupSchema.safeParse({
-    name: formData.get("name"),
-    email: formData.get("email"),
-    password: formData.get("password"),
-    confirm: formData.get("confirm"),
-  });
-  if (!parsed.success) {
-    const mismatch = parsed.error.issues.some((i) => i.message === "PASSWORDS_DO_NOT_MATCH");
-    return { error: mismatch ? "mismatch" : "weak" };
-  }
-
-  const email = parsed.data.email.toLowerCase();
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) return { error: "emailTaken" };
-
-  let user;
   try {
-    user = await prisma.user.create({
-      data: {
-        email,
-        name: parsed.data.name,
-        role: "AUTHOR",
-        status: "ACTIVE",
-        passwordHash: await hashPassword(parsed.data.password),
-      },
-    });
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return { error: "expiredSession" };
+    const code = await issueOtp(user.id);
+    await sendOtpEmail(user.email, user.name, code);
+    return { ok: true };
   } catch (e) {
-    console.error("[signupAction]", e);
+    console.error("[resendOtpAction]", e);
     return { error: "server" };
   }
-
-  // Auto sign-in the new author.
-  const token = createToken({ sub: user.id, role: user.role, email: user.email, name: user.name });
-  await setSessionCookie(token);
-  const locale = String(formData.get("locale") || "fr");
-  redirect(`/${locale}/author`);
 }
 
 export async function logoutAction(): Promise<void> {
   await clearSessionCookie();
+  await clearPendingLogin();
   // Redirect to the root; the i18n middleware localizes it (e.g. → /fr).
   redirect("/");
 }

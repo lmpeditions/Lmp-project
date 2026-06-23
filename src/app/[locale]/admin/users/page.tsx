@@ -1,5 +1,5 @@
 import { setRequestLocale, getTranslations } from "next-intl/server";
-import { UserPlus } from "lucide-react";
+import { UserPlus, ShieldPlus } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { UserTable } from "@/components/admin/user-table";
 import { Link } from "@/i18n/routing";
@@ -50,13 +50,22 @@ export default async function AdminUsersPage({
         title={t("title")}
         subtitle={t("subtitle")}
         actions={
-          <Link
-            href="/admin/users/new"
-            className="inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm shadow-primary/30 transition-all hover:opacity-90 active:scale-[0.99]"
-          >
-            <UserPlus className="h-4 w-4" />
-            {t("newUser")}
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/admin/users/new-admin"
+              className="inline-flex h-10 items-center gap-2 rounded-md border border-border bg-card px-4 text-sm font-semibold transition-all hover:bg-muted active:scale-[0.99]"
+            >
+              <ShieldPlus className="h-4 w-4" />
+              {t("newAdmin")}
+            </Link>
+            <Link
+              href="/admin/users/new"
+              className="inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm shadow-primary/30 transition-all hover:opacity-90 active:scale-[0.99]"
+            >
+              <UserPlus className="h-4 w-4" />
+              {t("newUser")}
+            </Link>
+          </div>
         }
       />
       <UserTable users={users} />

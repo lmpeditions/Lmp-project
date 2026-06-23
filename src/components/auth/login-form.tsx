@@ -37,6 +37,21 @@ export function LoginForm() {
       </div>
 
       <div className="space-y-1.5">
+        <label htmlFor="authorNumber" className="text-sm font-medium">
+          {t("authorNumber")}
+        </label>
+        <input
+          id="authorNumber"
+          name="authorNumber"
+          type="text"
+          autoComplete="off"
+          placeholder="LMP-2026-0001"
+          className={`${inputClass} font-mono`}
+        />
+        <p className="text-xs text-muted-foreground">{t("authorNumberHint")}</p>
+      </div>
+
+      <div className="space-y-1.5">
         <div className="flex items-center justify-between">
           <label htmlFor="password" className="text-sm font-medium">
             {t("password")}

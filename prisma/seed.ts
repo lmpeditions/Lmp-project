@@ -41,6 +41,7 @@ async function main() {
       name: "Yasmine El Amrani",
       role: "AUTHOR",
       status: "ACTIVE",
+      authorNumber: "LMP-2026-0001",
       phone: "+212 6 12 34 56 78",
       address: "Casablanca, Maroc",
       passwordHash: password,
@@ -158,7 +159,7 @@ async function main() {
   console.log("  Super Admin : sami.idrissi@lmp.ma / demo1234");
   console.log("  Admin       : karim.benali@lmp.ma / demo1234");
   console.log("  Manager     : salma.haddadi@lmp.ma / demo1234");
-  console.log("  Author      : yasmine.elamrani@exemple.ma / demo1234");
+  console.log("  Author      : yasmine.elamrani@exemple.ma / demo1234 (n° LMP-2026-0001)");
   // Reference unused vars so linters stay quiet.
   void superAdmin;
   void manager;

@@ -37,6 +37,19 @@ export async function nextTrackingNumber(date = new Date()): Promise<string> {
   return `${prefix}${seq}`;
 }
 
+/** Generate the next unique author number for a year: LMP-{year}-{seq:4}. */
+export async function nextAuthorNumber(date = new Date()): Promise<string> {
+  const year = date.getFullYear();
+  const prefix = `LMP-${year}-`;
+  const last = await prisma.user.findFirst({
+    where: { authorNumber: { startsWith: prefix } },
+    orderBy: { authorNumber: "desc" },
+    select: { authorNumber: true },
+  });
+  const seq = last?.authorNumber ? Number(last.authorNumber.slice(prefix.length)) : 0;
+  return `${prefix}${String(seq + 1).padStart(4, "0")}`;
+}
+
 /** Recompute and persist a dossier's global progress (0–100) from its stages. */
 export async function recalcProgress(dossierId: string): Promise<number> {
   const stages = await prisma.stage.findMany({ where: { dossierId } });
