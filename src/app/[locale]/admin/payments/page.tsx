@@ -1,10 +1,11 @@
 import { setRequestLocale, getTranslations } from "next-intl/server";
-import { Plus, TrendingUp, Clock, CheckCircle2 } from "lucide-react";
+import { TrendingUp, Clock, CheckCircle2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/shared/page-header";
-import { ActionButton } from "@/components/shared/action-button";
-import { getAdminPayments } from "@/server/queries";
+import { RecordPaymentForm } from "@/components/admin/record-payment-form";
+import { getAdminPayments, getDossierOptions } from "@/server/queries";
+import { confirmPaymentAction } from "@/server/finance-actions";
 import { formatDH, formatDate } from "@/lib/utils";
 import { paymentStatusTone } from "@/lib/status";
 
@@ -21,6 +22,7 @@ export default async function AdminPaymentsPage({
   const tc = await getTranslations("common");
 
   const adminPayments = await getAdminPayments();
+  const dossierOptions = await getDossierOptions();
 
   const collected = adminPayments
     .filter((p) => p.status === "validated")
@@ -34,12 +36,7 @@ export default async function AdminPaymentsPage({
       <PageHeader
         title={t("title")}
         subtitle={t("subtitle")}
-        actions={
-          <ActionButton successMessage={tc("demoNote")}>
-            <Plus className="h-4 w-4" />
-            {t("recordPayment")}
-          </ActionButton>
-        }
+        actions={<RecordPaymentForm dossiers={dossierOptions} />}
       />
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -108,9 +105,15 @@ export default async function AdminPaymentsPage({
                     </td>
                     <td className="px-5 py-3.5 text-right">
                       {p.status === "pending" ? (
-                        <span className="inline-flex items-center gap-1 text-xs font-medium text-success">
-                          <CheckCircle2 className="h-3.5 w-3.5" /> {t("validate")}
-                        </span>
+                        <form action={confirmPaymentAction} className="flex justify-end">
+                          <input type="hidden" name="paymentId" value={p.id} />
+                          <button
+                            type="submit"
+                            className="inline-flex items-center gap-1 rounded-md bg-success/10 px-2.5 py-1 text-xs font-semibold text-success transition-colors hover:bg-success/20"
+                          >
+                            <CheckCircle2 className="h-3.5 w-3.5" /> {t("validate")}
+                          </button>
+                        </form>
                       ) : (
                         <span className="text-muted-foreground">—</span>
                       )}

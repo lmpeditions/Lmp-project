@@ -660,7 +660,9 @@
     "unassigned": "Non assigné",
     "reply": "Répondre",
     "changeStatus": "Changer le statut",
-    "all": "Tous"
+    "all": "Tous",
+    "manage": "Gestion du ticket",
+    "save": "Enregistrer"
   },
   "adminPayments": {
     "title": "Gestion des Paiements",
@@ -670,7 +672,8 @@
     "author": "Auteur",
     "validate": "Valider",
     "totalCollected": "Total encaissé",
-    "totalPending": "En attente"
+    "totalPending": "En attente",
+    "chooseDossier": "Choisir un dossier"
   },
   "adminStats": {
     "title": "Statistiques",

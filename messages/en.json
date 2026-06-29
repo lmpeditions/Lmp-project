@@ -660,7 +660,9 @@
     "unassigned": "Unassigned",
     "reply": "Reply",
     "changeStatus": "Change status",
-    "all": "All"
+    "all": "All",
+    "manage": "Ticket management",
+    "save": "Save"
   },
   "adminPayments": {
     "title": "Payment Management",
@@ -670,7 +672,8 @@
     "author": "Author",
     "validate": "Validate",
     "totalCollected": "Total collected",
-    "totalPending": "Pending"
+    "totalPending": "Pending",
+    "chooseDossier": "Choose a case"
   },
   "adminStats": {
     "title": "Statistics",

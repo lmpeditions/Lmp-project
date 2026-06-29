@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Search } from "lucide-react";
+import { useRouter } from "@/i18n/routing";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -15,6 +16,7 @@ type Filter = "all" | "inProgress" | "completed" | "onHold";
 export function DossierTable({ rows }: { rows: AdminDossierRow[] }) {
   const t = useTranslations("adminDossiers");
   const tAdmin = useTranslations("admin");
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
 
@@ -77,7 +79,11 @@ export function DossierTable({ rows }: { rows: AdminDossierRow[] }) {
               {filtered.map((row) => (
                 <tr
                   key={row.trackingNumber}
-                  className="border-b border-border/60 last:border-0 transition-colors hover:bg-muted/40"
+                  onClick={row.id ? () => router.push(`/admin/dossiers/${row.id}`) : undefined}
+                  className={cn(
+                    "border-b border-border/60 last:border-0 transition-colors hover:bg-muted/40",
+                    row.id && "cursor-pointer"
+                  )}
                 >
                   <td className="px-3 py-3.5 font-mono text-xs">{row.trackingNumber}</td>
                   <td className="px-3 py-3.5 font-medium">{row.authorName}</td>

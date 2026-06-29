@@ -283,6 +283,8 @@ export interface AdminPaymentRow {
 }
 
 export interface AdminDossierRow {
+  /** Present for live rows (enables linking to the dossier detail). */
+  id?: string;
   trackingNumber: string;
   authorName: string;
   bookTitle: string;

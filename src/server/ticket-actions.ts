@@ -1,9 +1,11 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import type { TicketStatus } from "@prisma/client";
 import { prisma } from "./prisma";
-import { requireSession, assertDossierAccess, AuthError, isStaff } from "./rbac";
+import { requireSession, requirePermission, assertDossierAccess, AuthError, isStaff } from "./rbac";
 import { notify } from "./notifications";
+import { audit } from "./audit";
 import { getActiveBook } from "./queries";
 import { createTicketSchema, ticketReplySchema } from "./validators";
 
@@ -63,6 +65,62 @@ export async function createTicketAction(
     console.error("[createTicketAction]", e);
     return { error: "server" };
   }
+}
+
+const TICKET_STATUSES: TicketStatus[] = ["OPEN", "IN_PROGRESS", "WAITING", "RESOLVED", "CLOSED"];
+
+/**
+ * Staff-only: update a ticket's status and/or assignee (plain form action).
+ * Empty assignee value clears the assignment.
+ */
+export async function updateTicketAction(formData: FormData): Promise<void> {
+  let session;
+  try {
+    session = await requirePermission("ticket.manage");
+  } catch (e) {
+    if (e instanceof AuthError) return;
+    throw e;
+  }
+  const ticketId = String(formData.get("ticketId") || "");
+  const ticket = await prisma.ticket.findUnique({
+    where: { id: ticketId },
+    select: { id: true, authorId: true, dossierId: true, subject: true, status: true, assigneeId: true },
+  });
+  if (!ticket) return;
+
+  const rawStatus = String(formData.get("status") || "");
+  const status = TICKET_STATUSES.includes(rawStatus as TicketStatus) ? (rawStatus as TicketStatus) : ticket.status;
+
+  // assignee: "" clears, a valid staff id assigns, absent leaves unchanged.
+  const hasAssignee = formData.has("assigneeId");
+  let assigneeId = ticket.assigneeId;
+  if (hasAssignee) {
+    const raw = String(formData.get("assigneeId") || "");
+    if (!raw) {
+      assigneeId = null;
+    } else {
+      const staff = await prisma.user.findFirst({
+        where: { id: raw, role: { in: ["SUPER_ADMIN", "ADMIN", "MANAGER"] } },
+        select: { id: true },
+      });
+      assigneeId = staff ? staff.id : ticket.assigneeId;
+    }
+  }
+
+  await prisma.ticket.update({ where: { id: ticket.id }, data: { status, assigneeId } });
+
+  // Notify the author when the ticket is resolved or closed.
+  if (status !== ticket.status && (status === "RESOLVED" || status === "CLOSED")) {
+    await notify({
+      userId: ticket.authorId,
+      dossierId: ticket.dossierId,
+      type: "TICKET",
+      title: status === "RESOLVED" ? "Ticket résolu" : "Ticket clôturé",
+      body: `Votre ticket « ${ticket.subject} » a été ${status === "RESOLVED" ? "marqué comme résolu" : "clôturé"}.`,
+      email: false,
+    });
+  }
+  await audit({ actorId: session.sub, dossierId: ticket.dossierId, action: "ticket.updated", entity: "Ticket", meta: { status, assigneeId } });
 }
 
 /** Reply to a ticket (author who owns it, or any staff member). */

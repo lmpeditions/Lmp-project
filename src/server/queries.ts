@@ -9,6 +9,7 @@ const asAttachments = (v: unknown): Attachment[] =>
 import type {
   ActivityItem,
   AdminPaymentRow,
+  AdminDossierRow as AdminDossierRowView,
   AdminStats,
   Dossier as ViewDossier,
   NotificationItem,
@@ -412,6 +413,49 @@ export async function getAdminDossiers(): Promise<AdminDossierRow[]> {
   }));
 }
 
+/** Live dossier rows for the admin dossiers table (clickable, with ticket counts). */
+export async function getAdminDossierRows(): Promise<AdminDossierRowView[]> {
+  const rows = await prisma.dossier.findMany({
+    where: { status: { not: "PENDING_VALIDATION" } },
+    orderBy: { createdAt: "desc" },
+    include: {
+      author: { select: { name: true } },
+      manager: { select: { name: true } },
+      tickets: { where: { status: { in: ["OPEN", "IN_PROGRESS", "WAITING"] } }, select: { id: true } },
+    },
+  });
+  return rows.map((d) => ({
+    id: d.id,
+    trackingNumber: d.trackingNumber,
+    authorName: d.author.name,
+    bookTitle: d.bookTitle,
+    editor: d.manager?.name ?? "—",
+    progress: d.globalProgress,
+    status: dossierStatusView[d.status] ?? "inProgress",
+    openTickets: d.tickets.length,
+  }));
+}
+
+/** Lightweight dossier options (id + label) for selectors. */
+export async function getDossierOptions(): Promise<{ id: string; label: string }[]> {
+  const rows = await prisma.dossier.findMany({
+    where: { status: { not: "PENDING_VALIDATION" } },
+    orderBy: { createdAt: "desc" },
+    include: { author: { select: { name: true } } },
+  });
+  return rows.map((d) => ({ id: d.id, label: `${d.trackingNumber} — ${d.bookTitle} (${d.author.name})` }));
+}
+
+/** Back-office staff (for ticket assignment). */
+export async function getStaffUsers(): Promise<{ id: string; name: string }[]> {
+  const rows = await prisma.user.findMany({
+    where: { role: { in: ["SUPER_ADMIN", "ADMIN", "MANAGER"] } },
+    orderBy: { name: "asc" },
+    select: { id: true, name: true },
+  });
+  return rows;
+}
+
 // ----------------------------------------------------------------- Admin aggregates
 
 const STAGE_DB_TYPES = ["CONTRAT", "ISBN", "RELECTURE", "CORRECTION", "COUVERTURE", "MISE_EN_PAGE", "COMMUNICATION", "PUBLICATION"] as const;
@@ -711,6 +755,8 @@ export interface TicketDetail {
   category: string;
   status: "open" | "inProgress" | "waiting" | "resolved" | "closed";
   authorId: string;
+  assigneeId: string | null;
+  assigneeName: string | null;
   messages: ThreadMessage[];
 }
 
@@ -718,7 +764,10 @@ export interface TicketDetail {
 export async function getTicket(ticketId: string): Promise<TicketDetail | null> {
   const t = await prisma.ticket.findUnique({
     where: { id: ticketId },
-    include: { messages: { orderBy: { createdAt: "asc" }, include: { sender: { select: { name: true, role: true } } } } },
+    include: {
+      messages: { orderBy: { createdAt: "asc" }, include: { sender: { select: { name: true, role: true } } } },
+      assignee: { select: { name: true } },
+    },
   });
   if (!t) return null;
   return {
@@ -728,6 +777,8 @@ export async function getTicket(ticketId: string): Promise<TicketDetail | null> 
     category: ticketCategoryView[t.category] ?? "general",
     status: ticketStatusView[t.status],
     authorId: t.authorId,
+    assigneeId: t.assigneeId,
+    assigneeName: t.assignee?.name ?? null,
     messages: t.messages.map((m) => ({
       id: m.id,
       side: isStaff(m.sender.role) ? "lmp" : "author",
