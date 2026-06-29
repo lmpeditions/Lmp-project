@@ -179,6 +179,19 @@
     "errorForbidden": "You don't have permission to create an administrator.",
     "errorServer": "Something went wrong. Please try again."
   },
+  "upload": {
+    "choose": "Choose a file…",
+    "uploading": "Uploading…",
+    "uploaded": "File uploaded",
+    "view": "View file",
+    "switchToUrl": "Paste a link instead",
+    "switchToFile": "Upload a file",
+    "urlPlaceholder": "https://… (link to the file)",
+    "notConfigured": "File storage not configured: paste a link for now.",
+    "tooLarge": "File too large (20 MB max).",
+    "typeNotAllowed": "File type not allowed.",
+    "error": "Upload failed. Try again or paste a link."
+  },
   "books": {
     "startTitle": "Start publishing with LMPéditions",
     "startSubtitle": "Introduce your new book. Our team will validate it before opening its tracking.",

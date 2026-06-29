@@ -179,6 +179,19 @@
     "errorForbidden": "Vous n'avez pas la permission de créer un administrateur.",
     "errorServer": "Une erreur est survenue. Réessayez."
   },
+  "upload": {
+    "choose": "Choisir un fichier…",
+    "uploading": "Téléversement…",
+    "uploaded": "Fichier téléversé",
+    "view": "Voir le fichier",
+    "switchToUrl": "Coller un lien plutôt",
+    "switchToFile": "Téléverser un fichier",
+    "urlPlaceholder": "https://… (lien vers le fichier)",
+    "notConfigured": "Stockage de fichiers non configuré : collez un lien pour l'instant.",
+    "tooLarge": "Fichier trop volumineux (20 Mo maximum).",
+    "typeNotAllowed": "Type de fichier non autorisé.",
+    "error": "Échec du téléversement. Réessayez ou collez un lien."
+  },
   "books": {
     "startTitle": "Démarrer l'édition avec LMPéditions",
     "startSubtitle": "Présentez votre nouveau livre. Notre équipe le validera avant d'ouvrir son suivi.",

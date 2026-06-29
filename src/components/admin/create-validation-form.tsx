@@ -4,6 +4,7 @@ import { useActionState, useEffect, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { Send, AlertCircle } from "lucide-react";
 import { createValidationRequestAction, type ValidationActionState } from "@/server/validation-actions";
+import { FileUploadField } from "@/components/shared/file-upload-field";
 
 const inputClass =
   "w-full rounded-md border border-border bg-card px-3 py-2 text-sm outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/30";
@@ -32,7 +33,7 @@ export function CreateValidationForm({ dossierId }: { dossierId: string }) {
       </div>
 
       {[1, 2, 3, 4].map((n) => (
-        <div key={n} className="flex flex-col gap-2 sm:flex-row">
+        <div key={n} className="flex flex-col gap-2 sm:flex-row sm:items-start">
           <input
             name={`option${n}Label`}
             required
@@ -40,12 +41,9 @@ export function CreateValidationForm({ dossierId }: { dossierId: string }) {
             placeholder={t("modelLabel", { n })}
             className={`${inputClass} sm:flex-1`}
           />
-          <input
-            name={`option${n}Url`}
-            type="url"
-            placeholder={t("linkOptional")}
-            className={`${inputClass} sm:flex-1`}
-          />
+          <div className="sm:flex-1">
+            <FileUploadField name={`option${n}Url`} folder="covers" accept="image/*,.pdf" />
+          </div>
         </div>
       ))}
 
