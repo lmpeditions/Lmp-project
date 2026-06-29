@@ -1,9 +1,9 @@
 import { setRequestLocale, getTranslations } from "next-intl/server";
-import { Percent, Gauge, Users, Download } from "lucide-react";
+import { Percent, Gauge, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
-import { ActionButton } from "@/components/shared/action-button";
+import { ExportStatsButton } from "@/components/admin/export-stats-button";
 import { RevenueChart } from "@/components/charts/revenue-chart";
 import { StageChart } from "@/components/charts/stage-chart";
 import { getAdminStats } from "@/server/queries";
@@ -18,7 +18,6 @@ export default async function AdminStatisticsPage({
   setRequestLocale(locale);
   const t = await getTranslations("adminStats");
   const tAdmin = await getTranslations("admin");
-  const tc = await getTranslations("common");
   const s = await getAdminStats();
 
   const completionRate = s.totalProjects ? Math.round((s.completed / s.totalProjects) * 100) : 0;
@@ -31,12 +30,7 @@ export default async function AdminStatisticsPage({
       <PageHeader
         title={t("title")}
         subtitle={t("subtitle")}
-        actions={
-          <ActionButton variant="outline" successMessage={tc("demoNote")}>
-            <Download className="h-4 w-4" />
-            {t("export")}
-          </ActionButton>
-        }
+        actions={<ExportStatsButton rows={s.dossiers} />}
       />
 
       <div className="grid gap-4 sm:grid-cols-3">

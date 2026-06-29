@@ -109,6 +109,14 @@ export const createUserSchema = z.object({
   role: z.enum(["SUPER_ADMIN", "ADMIN", "MANAGER", "AUTHOR"]),
 });
 
+/** Admin edits an existing user (name, role, status). */
+export const updateUserSchema = z.object({
+  userId: z.string().min(1),
+  name: z.string().min(1).max(200),
+  role: z.enum(["SUPER_ADMIN", "ADMIN", "MANAGER", "AUTHOR"]),
+  status: z.enum(["ACTIVE", "SUSPENDED", "INVITED"]),
+});
+
 /** Full author CRM record + their first book, created by an admin. */
 export const createAuthorSchema = z.object({
   name: z.string().min(1).max(200),

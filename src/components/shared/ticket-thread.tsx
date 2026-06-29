@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import { Send } from "lucide-react";
 import { replyTicketAction, type TicketActionState } from "@/server/ticket-actions";
@@ -18,12 +19,18 @@ export function TicketThread({
 }) {
   const t = useTranslations("tickets");
   const locale = useLocale();
+  const router = useRouter();
   const [state, formAction, pending] = useActionState<TicketActionState, FormData>(replyTicketAction, {});
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
-    if (state.ok) formRef.current?.reset();
-  }, [state]);
+    // On success: clear the box AND re-fetch the route so the new message shows
+    // immediately (previously it only appeared after a manual page reload).
+    if (state.ok) {
+      formRef.current?.reset();
+      router.refresh();
+    }
+  }, [state, router]);
 
   const fmt = (iso: string) =>
     new Date(iso).toLocaleString(locale === "fr" ? "fr-FR" : "en-US", { dateStyle: "short", timeStyle: "short" });

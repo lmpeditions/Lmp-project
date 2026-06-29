@@ -25,18 +25,22 @@ export default async function AdminDossierDetail({
   setRequestLocale(locale);
   const t = await getTranslations("review");
 
-  const r = await getReviewData(id);
+  // Fetch all independent data in parallel (was 5 sequential round-trips).
+  const [r, validations, finance, layoutMessages, communicationMessages, tv, tf, tc, tComm, tLayout] =
+    await Promise.all([
+      getReviewData(id),
+      getDossierValidations(id),
+      getFinanceData(id),
+      getStageMessages(id, "LAYOUT"),
+      getStageMessages(id, "COMMUNICATION"),
+      getTranslations("validation"),
+      getTranslations("finance"),
+      getTranslations("common"),
+      getTranslations("communication"),
+      getTranslations("miseEnPage"),
+    ]);
   if (!r) notFound();
-  const tv = await getTranslations("validation");
-  const tf = await getTranslations("finance");
-  const tc = await getTranslations("common");
-  const validations = await getDossierValidations(id);
-  const finance = await getFinanceData(id);
   const pendingPayments = finance?.payments.filter((p) => p.status === "pending") ?? [];
-  const layoutMessages = await getStageMessages(id, "LAYOUT");
-  const communicationMessages = await getStageMessages(id, "COMMUNICATION");
-  const tComm = await getTranslations("communication");
-  const tLayout = await getTranslations("miseEnPage");
 
   return (
     <div className="space-y-6">

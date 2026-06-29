@@ -74,9 +74,11 @@ export default async function AuthorDashboard({
     );
   }
 
-  const d = await getAuthorDashboard(active.id);
+  const [d, ledger] = await Promise.all([
+    getAuthorDashboard(active.id),
+    getLedgerSummary(active.id),
+  ]);
   if (!d) redirect(`/${locale}/author/start`);
-  const ledger = await getLedgerSummary(active.id);
 
   const paid = d.payments.reduce((s, p) => s + p.amount, 0);
   const remaining = d.contractTotal - paid;
