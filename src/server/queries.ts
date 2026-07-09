@@ -24,8 +24,8 @@ import type {
  * Read-side data access for Server Components.
  *
  * Bridges the Prisma layer (UPPER_SNAKE enums) to the existing view types
- * (camelCase) used by the UI components, so pages can swap mock-data for live
- * Supabase data without touching the presentation layer.
+ * (camelCase) used by the UI components, keeping the presentation layer
+ * decoupled from the database schema.
  */
 
 const stageTypeMap: Record<string, ViewStageType> = {

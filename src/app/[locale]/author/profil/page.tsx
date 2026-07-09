@@ -1,10 +1,11 @@
 import { setRequestLocale, getTranslations } from "next-intl/server";
-import { User, Mail, Phone, MapPin, Palette, Languages, ShieldCheck } from "lucide-react";
+import { Palette, Languages, ShieldCheck } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/shared/page-header";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { LanguageSwitcher } from "@/components/shared/language-switcher";
-import { ActionButton } from "@/components/shared/action-button";
+import { ProfileForm } from "@/components/author/profile-form";
+import { ChangePasswordForm } from "@/components/author/change-password-form";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/server/queries";
 
@@ -28,16 +29,6 @@ export default async function ProfilPage({
     address: user.address ?? "",
   };
 
-  const fields = [
-    { icon: User, label: t("name"), value: p.name, type: "text" },
-    { icon: Mail, label: t("email"), value: p.email, type: "email" },
-    { icon: Phone, label: t("phone"), value: p.phone, type: "tel" },
-    { icon: MapPin, label: t("address"), value: p.address, type: "text" },
-  ];
-
-  const inputClass =
-    "h-11 w-full rounded-md border border-border bg-card px-3.5 text-sm outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/30";
-
   return (
     <div className="space-y-6">
       <PageHeader title={t("title")} subtitle={t("subtitle")} />
@@ -57,19 +48,8 @@ export default async function ProfilPage({
           <CardHeader>
             <CardTitle>{t("personalInfo")}</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              {fields.map((f) => (
-                <div key={f.label} className="space-y-1.5">
-                  <label className="flex items-center gap-1.5 text-sm font-medium">
-                    <f.icon className="h-3.5 w-3.5 text-muted-foreground" />
-                    {f.label}
-                  </label>
-                  <input type={f.type} defaultValue={f.value} className={inputClass} />
-                </div>
-              ))}
-            </div>
-            <ActionButton successMessage={t("saved")}>{tc("save")}</ActionButton>
+          <CardContent>
+            <ProfileForm initial={p} />
           </CardContent>
         </Card>
       </div>
@@ -104,24 +84,8 @@ export default async function ProfilPage({
             <ShieldCheck className="h-4 w-4 text-primary" />
             <CardTitle>{t("security")}</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">{t("currentPassword")}</label>
-              <input type="password" className={inputClass} />
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium">{t("newPassword")}</label>
-                <input type="password" className={inputClass} />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium">{t("confirmPassword")}</label>
-                <input type="password" className={inputClass} />
-              </div>
-            </div>
-            <ActionButton variant="outline" successMessage={t("saved")}>
-              {t("changePassword")}
-            </ActionButton>
+          <CardContent>
+            <ChangePasswordForm />
           </CardContent>
         </Card>
       </div>

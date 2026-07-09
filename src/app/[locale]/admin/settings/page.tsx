@@ -3,7 +3,6 @@ import { Settings, Languages, Palette, ShieldCheck, Check, Minus } from "lucide-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/shared/page-header";
-import { ActionButton } from "@/components/shared/action-button";
 
 const ROLES = ["superAdmin", "admin", "manager", "author"] as const;
 const MODULES = ["dossiers", "users", "payments", "tickets", "statistics", "settings"] as const;
@@ -31,8 +30,10 @@ export default async function AdminSettingsPage({
   const tRoles = await getTranslations("adminUsers.roles");
   const tc = await getTranslations("common");
 
-  const inputClass =
-    "h-11 w-full rounded-md border border-border bg-card px-3.5 text-sm outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/30";
+  const appName = process.env.NEXT_PUBLIC_APP_NAME ?? "LMP";
+  const defaultLocale = (process.env.NEXT_PUBLIC_DEFAULT_LOCALE ?? "fr").toLowerCase();
+  const readonlyRow =
+    "flex h-11 items-center rounded-md border border-border bg-muted/40 px-3.5 text-sm text-muted-foreground";
 
   return (
     <div className="space-y-6">
@@ -48,7 +49,7 @@ export default async function AdminSettingsPage({
           <CardContent className="space-y-4">
             <div className="space-y-1.5">
               <label className="text-sm font-medium">{t("orgName")}</label>
-              <input type="text" defaultValue="Les Manuscrits Publiés (LMP)" className={inputClass} />
+              <div className={readonlyRow}>{appName}</div>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
@@ -56,24 +57,17 @@ export default async function AdminSettingsPage({
                   <Languages className="h-3.5 w-3.5 text-muted-foreground" />
                   {t("defaultLanguage")}
                 </label>
-                <select className={inputClass} defaultValue="fr">
-                  <option value="fr">{tc("french")}</option>
-                  <option value="en">{tc("english")}</option>
-                </select>
+                <div className={readonlyRow}>{defaultLocale === "en" ? tc("english") : tc("french")}</div>
               </div>
               <div className="space-y-1.5">
                 <label className="flex items-center gap-1.5 text-sm font-medium">
                   <Palette className="h-3.5 w-3.5 text-muted-foreground" />
                   {t("defaultTheme")}
                 </label>
-                <select className={inputClass} defaultValue="system">
-                  <option value="light">{tc("lightMode")}</option>
-                  <option value="dark">{tc("darkMode")}</option>
-                  <option value="system">{tc("systemMode")}</option>
-                </select>
+                <div className={readonlyRow}>{tc("systemMode")}</div>
               </div>
             </div>
-            <ActionButton successMessage={t("saved")}>{tc("save")}</ActionButton>
+            <p className="text-xs text-muted-foreground">{t("readOnlyNote")}</p>
           </CardContent>
         </Card>
 

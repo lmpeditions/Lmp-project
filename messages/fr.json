@@ -587,7 +587,11 @@
     "newPassword": "Nouveau mot de passe",
     "confirmPassword": "Confirmer le mot de passe",
     "changePassword": "Changer le mot de passe",
-    "saved": "Vos modifications ont été enregistrées."
+    "saved": "Vos modifications ont été enregistrées.",
+    "saving": "Enregistrement…",
+    "errServer": "Une erreur est survenue. Réessayez.",
+    "errCurrentWrong": "Mot de passe actuel incorrect.",
+    "passwordChanged": "Votre mot de passe a été mis à jour."
   },
   "notifications": {
     "title": "Notifications",
@@ -719,7 +723,8 @@
     "permissions": "Gestion des permissions",
     "permissionsHint": "Matrice des permissions par rôle (Super Admin uniquement).",
     "module": "Module",
-    "saved": "Paramètres enregistrés."
+    "saved": "Paramètres enregistrés.",
+    "readOnlyNote": "Configuration globale définie par variables d'environnement. La langue et le thème sont réglables par chaque utilisateur dans son profil."
   },
   "apply": {
     "title": "Devenir auteur LMP",

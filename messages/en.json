@@ -587,7 +587,11 @@
     "newPassword": "New password",
     "confirmPassword": "Confirm password",
     "changePassword": "Change password",
-    "saved": "Your changes have been saved."
+    "saved": "Your changes have been saved.",
+    "saving": "Saving…",
+    "errServer": "Something went wrong. Please try again.",
+    "errCurrentWrong": "Current password is incorrect.",
+    "passwordChanged": "Your password has been updated."
   },
   "notifications": {
     "title": "Notifications",
@@ -719,7 +723,8 @@
     "permissions": "Permission management",
     "permissionsHint": "Per-role permission matrix (Super Admin only).",
     "module": "Module",
-    "saved": "Settings saved."
+    "saved": "Settings saved.",
+    "readOnlyNote": "Global configuration is set via environment variables. Language and theme are adjustable per user in their profile."
   },
   "apply": {
     "title": "Become an LMP author",

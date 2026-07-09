@@ -103,12 +103,6 @@ export const updateProfileSchema = z.object({
   theme: z.enum(["LIGHT", "DARK", "SYSTEM"]).optional(),
 });
 
-export const createUserSchema = z.object({
-  name: z.string().min(1).max(200),
-  email: z.string().email(),
-  role: z.enum(["SUPER_ADMIN", "ADMIN", "MANAGER", "AUTHOR"]),
-});
-
 /** Admin edits an existing user (name, role, status). */
 export const updateUserSchema = z.object({
   userId: z.string().min(1),
@@ -240,6 +234,18 @@ export const editorDecideSchema = z.object({
   requestId: z.string().min(1),
   selectedOptionId: z.string().min(1),
 });
+
+/** A signed-in user changes their own password (verifying the current one). */
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1).max(200),
+    newPassword: z.string().min(8).max(200),
+    confirm: z.string().min(8).max(200),
+  })
+  .refine((d) => d.newPassword === d.confirm, {
+    message: "PASSWORDS_DO_NOT_MATCH",
+    path: ["confirm"],
+  });
 
 /** Set a password from an activation or reset token. */
 export const setPasswordSchema = z
