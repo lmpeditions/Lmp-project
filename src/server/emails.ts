@@ -41,7 +41,7 @@ export async function sendActivationEmail(
        <p style="color:#888;font-size:12px">Ce lien est valable 7 jours.</p>`,
     ),
   );
-  console.info(`[activation-link] ${to} -> ${link}`);
+  if (process.env.NODE_ENV !== "production") console.info(`[activation-link] ${to} -> ${link}`);
   return link;
 }
 
@@ -57,7 +57,7 @@ export async function sendOtpEmail(to: string, name: string, code: string): Prom
        <p style="color:#888;font-size:12px">Ce code expire dans 10 minutes. Si vous n'êtes pas à l'origine de cette connexion, ignorez cet e-mail et changez votre mot de passe.</p>`,
     ),
   );
-  console.info(`[otp] ${to} -> ${code}`);
+  if (process.env.NODE_ENV !== "production") console.info(`[otp] ${to} -> ${code}`);
 }
 
 /** Send a password-reset link. */
@@ -78,6 +78,6 @@ export async function sendResetEmail(
        <p style="color:#888;font-size:12px">Ce lien est valable 2 heures. Si vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail.</p>`,
     ),
   );
-  console.info(`[reset-link] ${to} -> ${link}`);
+  if (process.env.NODE_ENV !== "production") console.info(`[reset-link] ${to} -> ${link}`);
   return link;
 }

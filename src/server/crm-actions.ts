@@ -208,7 +208,9 @@ export async function createAdminAction(
 
 export interface ResetRequestState {
   ok?: boolean;
-  resetLink?: string; // dev convenience only
+  /** Dev-only convenience: NEVER populated in production (the reset link in
+   * the browser would let anyone take over an account without inbox access). */
+  resetLink?: string;
 }
 
 export async function requestResetAction(
@@ -226,7 +228,8 @@ export async function requestResetAction(
   let resetLink: string | undefined;
   if (user) {
     const token = await createInviteToken(user.id, "PASSWORD_RESET");
-    resetLink = await sendResetEmail(user.email, user.name, token, locale);
+    const link = await sendResetEmail(user.email, user.name, token, locale);
+    if (process.env.NODE_ENV !== "production") resetLink = link;
   }
   return { ok: true, resetLink };
 }
