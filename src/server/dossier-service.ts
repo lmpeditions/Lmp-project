@@ -22,7 +22,9 @@ const STAGE_ORDER: StageType[] = [
 
 /**
  * Generate the next unique tracking number for a year: #LMP{year}{seq:4}.
- * Uses a transaction to avoid race conditions on the sequence.
+ * The DB unique constraint on `trackingNumber` guarantees integrity: two
+ * concurrent creations racing on the same sequence make one insert fail
+ * (P2002) rather than duplicate — acceptable at this volume.
  */
 export async function nextTrackingNumber(date = new Date()): Promise<string> {
   const year = date.getFullYear();

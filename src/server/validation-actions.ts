@@ -18,6 +18,14 @@ export interface ValidationActionState {
 
 const SEVEN_DAYS = 1000 * 60 * 60 * 24 * 7;
 
+/** Extract the valid option ids from a request's stored options JSON. */
+function optionIds(options: Prisma.JsonValue): string[] {
+  if (!Array.isArray(options)) return [];
+  return options
+    .map((o) => (o && typeof o === "object" && typeof (o as { id?: unknown }).id === "string" ? (o as { id: string }).id : null))
+    .filter((id): id is string => id !== null);
+}
+
 /** Admin sends a validation request with its 4 models and a 7-day deadline. */
 export async function createValidationRequestAction(
   _prev: ValidationActionState,
@@ -105,6 +113,12 @@ export async function respondValidationAction(
   if (req.status !== "PENDING") return { error: "closed" };
   if (req.deadline.getTime() < Date.now()) return { error: "expired" };
 
+  // When validating, the chosen option must be one of the request's own
+  // options (defends against a crafted form submitting an arbitrary id).
+  if (d.decision === "validate" && !optionIds(req.options).includes(d.selectedOptionId ?? "")) {
+    return { error: "optionRequired" };
+  }
+
   try {
     if (d.decision === "validate") {
       await prisma.validationRequest.update({
@@ -162,6 +176,7 @@ export async function editorDecideAction(formData: FormData): Promise<void> {
   const req = await prisma.validationRequest.findUnique({ where: { id: parsed.data.requestId } });
   if (!req) return;
   if (req.status !== "PENDING" || req.deadline.getTime() >= Date.now()) return;
+  if (!optionIds(req.options).includes(parsed.data.selectedOptionId)) return;
 
   try {
     await prisma.validationRequest.update({
