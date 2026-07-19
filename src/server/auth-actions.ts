@@ -41,7 +41,7 @@ export async function loginAction(
 ): Promise<LoginState> {
   // Throttle by client IP to slow brute-force attempts.
   const ip = clientIp(await headers());
-  if (!rateLimit(`login:${ip}`, { limit: 8, windowMs: 60_000 }).ok) {
+  if (!(await rateLimit(`login:${ip}`, { limit: 8, windowMs: 60_000 })).ok) {
     return { error: "tooManyAttempts" };
   }
 
@@ -99,7 +99,7 @@ export async function verifyOtpAction(
   if (!userId) return { error: "expiredSession" };
 
   const ip = clientIp(await headers());
-  if (!rateLimit(`otp:${ip}`, { limit: 10, windowMs: 60_000 }).ok) {
+  if (!(await rateLimit(`otp:${ip}`, { limit: 10, windowMs: 60_000 })).ok) {
     return { error: "tooManyAttempts" };
   }
 
@@ -135,7 +135,7 @@ export async function resendOtpAction(
   if (!userId) return { error: "expiredSession" };
 
   const ip = clientIp(await headers());
-  if (!rateLimit(`otp-resend:${ip}`, { limit: 3, windowMs: 5 * 60_000 }).ok) {
+  if (!(await rateLimit(`otp-resend:${ip}`, { limit: 3, windowMs: 5 * 60_000 })).ok) {
     return { error: "tooManyAttempts" };
   }
 

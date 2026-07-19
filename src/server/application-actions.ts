@@ -41,7 +41,7 @@ export async function submitApplicationAction(
   formData: FormData,
 ): Promise<ApplicationActionState> {
   const ip = clientIp(await headers());
-  if (!rateLimit(`apply:${ip}`, { limit: 3, windowMs: 60 * 60_000 }).ok) {
+  if (!(await rateLimit(`apply:${ip}`, { limit: 3, windowMs: 60 * 60_000 })).ok) {
     return { error: "tooManyAttempts" };
   }
 
