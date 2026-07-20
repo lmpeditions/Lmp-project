@@ -13,11 +13,18 @@ export function formatDH(amount: number, locale: string = "fr") {
   }).format(amount);
 }
 
-/** Format an ISO date string for display. */
-export function formatDate(iso: string, locale: string = "fr") {
+/**
+ * Format an ISO date string for display. Returns "—" for a missing or invalid
+ * date (e.g. a book with no estimated publication yet) instead of throwing a
+ * RangeError on `Invalid Date`.
+ */
+export function formatDate(iso: string | null | undefined, locale: string = "fr") {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
   return new Intl.DateTimeFormat(locale === "fr" ? "fr-FR" : "en-GB", {
     day: "2-digit",
     month: "short",
     year: "numeric",
-  }).format(new Date(iso));
+  }).format(d);
 }

@@ -331,7 +331,8 @@
     "strategyHint": "Cette section remplace automatiquement la version précédente (ne s'empile pas).",
     "save": "Enregistrer",
     "saved": "Enregistré.",
-    "actionError": "Erreur — vérifiez les champs."
+    "actionError": "Erreur — vérifiez les champs.",
+    "actionErrorServer": "Une erreur technique est survenue. Réessayez dans un instant."
   },
   "dashboard": {
     "welcome": "Bonjour",

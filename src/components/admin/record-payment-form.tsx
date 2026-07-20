@@ -56,7 +56,7 @@ export function RecordPaymentForm({ dossiers }: { dossiers: { id: string; label:
           {state.ok ? (
             <p className="flex items-center gap-1.5 text-xs text-success"><CheckCircle2 className="h-3.5 w-3.5" />{t("saved")}</p>
           ) : state.error ? (
-            <p className="flex items-center gap-1.5 text-xs text-danger"><AlertCircle className="h-3.5 w-3.5" />{t("actionError")}</p>
+            <p className="flex items-center gap-1.5 text-xs text-danger"><AlertCircle className="h-3.5 w-3.5" />{state.error === "validation" ? t("actionError") : t("actionErrorServer")}</p>
           ) : <span />}
           <button type="submit" disabled={pending} className="inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60">
             {pending ? t("sending") : t("record")}

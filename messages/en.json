@@ -331,7 +331,8 @@
     "strategyHint": "This section automatically replaces the previous version (no stacking).",
     "save": "Save",
     "saved": "Saved.",
-    "actionError": "Error — check the fields."
+    "actionError": "Error — check the fields.",
+    "actionErrorServer": "A technical error occurred. Please try again in a moment."
   },
   "dashboard": {
     "welcome": "Hello",
